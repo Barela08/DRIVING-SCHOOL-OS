@@ -26,6 +26,7 @@ import {
   List
 } from 'lucide-react';
 import { Student, Payment, ClassSchedule, Instructor, LicenceRecord } from '@/types';
+import { LLPendingApplicationsSection } from '@/components/licence/LLPendingApplicationsSection';
 
 interface DashboardViewProps {
   onOpenStudent: (student: Student) => void;
@@ -840,6 +841,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* LEARNING LICENCE APPLICATIONS PENDING SECTION (SECTION 4 REQUIREMENT) */}
+      <LLPendingApplicationsSection onSelectStudent={onOpenStudent} />
 
       {/* 8. SECTION 11 & 12: LICENCE & VEHICLE FLEET OVERVIEW */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

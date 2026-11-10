@@ -24,6 +24,7 @@ import { NotificationsView } from '@/components/owner/views/NotificationsView';
 import { ReportsView } from '@/components/owner/views/ReportsView';
 import { AuditLogsView } from '@/components/owner/views/AuditLogsView';
 import { SettingsView } from '@/components/owner/views/SettingsView';
+import { CertificateManagement } from '@/components/owner/CertificateManagement';
 
 // Modals
 import { StudentDetailModal } from '@/components/modals/StudentDetailModal';
@@ -187,6 +188,10 @@ export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { in
 
           {activeSection === 'settings' && (
             <SettingsView />
+          )}
+
+          {activeSection === 'certificates' && (
+            <CertificateManagement />
           )}
         </main>
       </div>

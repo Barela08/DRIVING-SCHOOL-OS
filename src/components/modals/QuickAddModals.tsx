@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { X, UserPlus, Car, Users, IndianRupee, Calendar, ShieldCheck, Check } from 'lucide-react';
+import { LLRegistrationFields, LLRegistrationData } from '@/components/licence/LLRegistrationFields';
 
 interface QuickAddModalProps {
   type: 'student' | 'instructor' | 'staff' | 'payment' | 'schedule' | 'vehicle' | null;
@@ -41,6 +42,8 @@ export const QuickAddModals: React.FC<QuickAddModalProps> = ({ type, onClose }) 
     area: '',
     pincode: '411001'
   });
+
+  const [llData, setLLData] = useState<LLRegistrationData>({ hasExistingLL: false });
 
   // Instructor Form State
   const [instructorForm, setInstructorForm] = useState({
@@ -126,7 +129,14 @@ export const QuickAddModals: React.FC<QuickAddModalProps> = ({ type, onClose }) 
         paymentMethod: studentForm.paymentMethod,
         gender: studentForm.gender,
         dateOfBirth: studentForm.dateOfBirth,
-        address: { city: studentForm.city, area: studentForm.area, pincode: studentForm.pincode }
+        address: { city: studentForm.city, area: studentForm.area, pincode: studentForm.pincode },
+        hasExistingLL: llData.hasExistingLL,
+        llNumber: llData.llNumber,
+        llIssueDate: llData.llIssueDate,
+        llExpiryDate: llData.llExpiryDate,
+        llVehicleCategory: llData.llVehicleCategory,
+        llDocumentName: llData.llDocumentName,
+        llDocumentUrl: llData.llDocumentUrl
       });
       if (res.success) {
         addToast(`Student admitted successfully! Code: ${res.studentCode}`, 'success');
@@ -421,6 +431,14 @@ export const QuickAddModals: React.FC<QuickAddModalProps> = ({ type, onClose }) 
                     <option value="Bank Transfer">Bank Transfer / IMPS</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Mandatory Learning Licence Registration Question */}
+              <div className="pt-2 border-t border-slate-800">
+                <LLRegistrationFields
+                  value={llData}
+                  onChange={setLLData}
+                />
               </div>
 
               <div className="pt-2 flex justify-end gap-3">

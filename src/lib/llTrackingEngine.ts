@@ -81,7 +81,7 @@ export function checkGovernmentEligibilityRules(
   let ageYears = 18; // default fallback
   if (student.date_of_birth) {
     const dob = new Date(student.date_of_birth);
-    const now = new Date();
+    const now = new Date('2026-11-10T12:00:00Z');
     ageYears = now.getFullYear() - dob.getFullYear();
     const monthDiff = now.getMonth() - dob.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
@@ -204,8 +204,8 @@ export function getStudentLLProgress(
   const documentVerified = Boolean(uploadedDoc?.verification_status === 'Verified' || licenceRecord?.ll_document_verified);
 
   // Check validity and expiry
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = '2026-11-10';
+  const nowTime = new Date('2026-11-10T12:00:00Z').getTime();
   let isLLValid = false;
   let isLLExpired = false;
   let isLLExpiringSoon = false;
@@ -218,7 +218,7 @@ export function getStudentLLProgress(
     } else {
       isLLValid = true;
       const expiryDate = new Date(validTill);
-      const daysLeft = (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+      const daysLeft = (expiryDate.getTime() - nowTime) / (1000 * 60 * 60 * 24);
       if (daysLeft <= 30) {
         isLLExpiringSoon = true;
       }

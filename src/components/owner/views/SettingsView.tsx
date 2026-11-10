@@ -16,7 +16,10 @@ import {
   User, 
   Check, 
   Save,
-  FileCheck2 
+  FileCheck2,
+  Award,
+  Star,
+  ExternalLink 
 } from 'lucide-react';
 import { LLSettingsSection } from '@/components/licence/LLSettingsSection';
 
@@ -24,8 +27,13 @@ export const SettingsView: React.FC = () => {
   const { school, branches, currentUser, updateSchool, addToast } = useDrivingSchool();
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'profile' | 'branding' | 'branches' | 'permissions' | 'courses' | 'notifications' | 'payments' | 'security' | 'account' | 'll-reminders'
+    'profile' | 'branding' | 'branches' | 'permissions' | 'courses' | 'notifications' | 'payments' | 'security' | 'account' | 'll-reminders' | 'certificates'
   >('profile');
+
+  // Certificate & Review form state
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(school.google_review_url || '');
+  const [autoIssueCerts, setAutoIssueCerts] = useState(school.auto_issue_certificates ?? true);
+  const [savingReviewSettings, setSavingReviewSettings] = useState(false);
 
   // School profile form state
   const [profileForm, setProfileForm] = useState({
@@ -87,6 +95,7 @@ export const SettingsView: React.FC = () => {
           { id: 'security', label: '8. Security & Supabase RLS', icon: Lock },
           { id: 'account', label: '9. Owner Account', icon: User },
           { id: 'll-reminders', label: '10. LL Reminder Settings', icon: FileCheck2 },
+          { id: 'certificates', label: '11. Certificates & Reviews', icon: Award },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -313,6 +322,105 @@ export const SettingsView: React.FC = () => {
       {/* TAB 10: LEARNING LICENCE REMINDER SETTINGS */}
       {activeSubTab === 'll-reminders' && (
         <LLSettingsSection />
+      )}
+
+      {/* TAB 11: CERTIFICATES & GOOGLE REVIEWS */}
+      {activeSubTab === 'certificates' && (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6 text-xs max-w-4xl shadow-xl">
+          <div className="border-b border-slate-800 pb-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-400" /> Automatic Certificates & Google Reviews
+            </h3>
+            <p className="text-slate-400 mt-1">
+              Configure automatic course completion certificates, student feedback collection, and your official Google Review invitation link.
+            </p>
+          </div>
+
+          {/* Google Review URL Config */}
+          <div className="space-y-3 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <h4 className="font-bold text-white text-sm">Official Google Business Review Link</h4>
+              </div>
+              {googleReviewUrl && (
+                <a
+                  href={googleReviewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Test Link
+                </a>
+              )}
+            </div>
+            <p className="text-slate-400 leading-relaxed">
+              When students download their completion certificate for the first time, they receive an optional invitation to write a public review on your Google Business profile:
+            </p>
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 italic text-xs">
+              &quot;Congratulations on completing your driving course! We hope you had a great learning experience. Please share your honest experience and help others discover our driving school.&quot;
+            </div>
+            <div>
+              <label className="text-slate-300 font-semibold block mb-1">Google Review URL</label>
+              <input
+                type="url"
+                value={googleReviewUrl}
+                onChange={e => setGoogleReviewUrl(e.target.value)}
+                placeholder="https://g.page/r/your-google-place-id/review"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Tip: Get your review shortlink from Google Business Profile Manager &rarr; &quot;Ask for reviews&quot;.
+              </p>
+            </div>
+          </div>
+
+          {/* Automatic Issuance Toggle */}
+          <div className="space-y-3 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+            <h4 className="font-bold text-white text-sm">Automatic Certificate Verification & Issuance</h4>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoIssueCerts}
+                onChange={e => setAutoIssueCerts(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700"
+              />
+              <div>
+                <span className="font-semibold text-white block">
+                  Automatically issue certificates when course requirements are fulfilled
+                </span>
+                <span className="text-slate-400 text-xs block mt-0.5">
+                  Verifies actual attendance records against allocated session quotas. As soon as all sessions are marked Present, the student status updates to &quot;Course Completed&quot; and the certificate is immediately generated.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {/* Action buttons */}
+          <div className="border-t border-slate-800 pt-4 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              disabled={savingReviewSettings}
+              onClick={async () => {
+                setSavingReviewSettings(true);
+                try {
+                  await updateSchool({
+                    google_review_url: googleReviewUrl.trim(),
+                    auto_issue_certificates: autoIssueCerts
+                  });
+                  addToast('Certificate & Google Review settings saved successfully!', 'success');
+                } catch {
+                  addToast('Failed to save settings', 'error');
+                } finally {
+                  setSavingReviewSettings(false);
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-lg shadow-blue-600/20"
+            >
+              <Save className="w-4 h-4" /> {savingReviewSettings ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

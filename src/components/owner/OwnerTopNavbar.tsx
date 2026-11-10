@@ -119,7 +119,8 @@ export const OwnerTopNavbar: React.FC<OwnerTopNavbarProps> = ({
     notifications: 'Notifications Center',
     reports: 'Reports & Export Engine',
     audit: 'Immutable Audit Trail',
-    settings: 'Organization Settings'
+    settings: 'Organization Settings',
+    certificates: 'Course Completion Certificates & Google Reviews'
   };
 
   return (

@@ -17,18 +17,21 @@ import {
   Sparkles,
   FileBadge
 } from 'lucide-react';
-import { LicenceRecord, Student, School } from '@/types';
+import { LicenceRecord, Student, School, Enrollment } from '@/types';
+import { StudentLLNotificationBanner } from '@/components/licence/StudentLLNotificationBanner';
 
 interface StudentLicenceTrackerProps {
   licence?: LicenceRecord;
   student: Student;
   school: School;
+  enrollment?: Enrollment;
 }
 
 export const StudentLicenceTracker: React.FC<StudentLicenceTrackerProps> = ({
   licence,
   student,
-  school
+  school,
+  enrollment
 }) => {
   // 6 Visual Pipeline stages from Section 12
   const pipeline = [
@@ -88,6 +91,9 @@ export const StudentLicenceTracker: React.FC<StudentLicenceTrackerProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Learning Licence Tracking & Automatic Reminder Banner */}
+      <StudentLLNotificationBanner student={student} enrollment={enrollment} />
+
       {/* Top Banner with Confirmed RTO Slot Highlight */}
       <div className="bg-gradient-to-r from-[#14243A] via-[#111E32] to-[#0B1728] border border-blue-500/30 rounded-3xl p-6 sm:p-8 shadow-xl text-white space-y-6 relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">

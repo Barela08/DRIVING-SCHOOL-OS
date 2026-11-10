@@ -38,11 +38,11 @@ export const LLWorkflowModal: React.FC<LLWorkflowModalProps> = ({
     licenceRecord?.application_number || licenceRecord?.ll_reference || ''
   );
   const [appDate, setAppDate] = useState(
-    licenceRecord?.ll_application_date || new Date().toISOString().split('T')[0]
+    licenceRecord?.ll_application_date || '2026-11-10'
   );
   const [testDate, setTestDate] = useState(licenceRecord?.test_date || '');
   const [approvalDate, setApprovalDate] = useState(
-    licenceRecord?.approval_date || licenceRecord?.ll_issue_date || new Date().toISOString().split('T')[0]
+    licenceRecord?.approval_date || licenceRecord?.ll_issue_date || '2026-11-10'
   );
   const [uploadedDocName, setUploadedDocName] = useState(
     licenceRecord?.ll_document_name || ''

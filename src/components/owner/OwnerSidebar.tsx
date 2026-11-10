@@ -45,7 +45,8 @@ export type OwnerNavSection =
   | 'notifications'
   | 'reports'
   | 'audit'
-  | 'settings';
+  | 'settings'
+  | 'certificates';
 
 export interface OwnerSidebarProps {
   activeSection: OwnerNavSection;
@@ -88,6 +89,7 @@ export const OwnerSidebar: React.FC<OwnerSidebarProps> = ({
     { id: 'reports', label: '14. Reports & Analytics', icon: BarChart3 },
     { id: 'audit', label: '15. Audit Logs', icon: History },
     { id: 'settings', label: '16. Settings', icon: Settings },
+    { id: 'certificates', label: '17. Certificates & Reviews', icon: Award },
   ];
 
   const handleNavClick = (section: OwnerNavSection) => {

@@ -244,19 +244,29 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Switch Test Learner:</span>
-                {students.slice(0, 4).map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveStudentId(s.id)}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition ${
-                      activeStudentId === s.id
-                        ? 'bg-blue-600 text-white font-bold shadow-sm'
-                        : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {s.full_name.split(' ')[0]} {s.id === 'stud-amit-03' ? '🎓' : ''}
-                  </button>
-                ))}
+                {students.map(s => {
+                  let badge = '';
+                  if (s.id === 'stud-amit-03') badge = '🎓';
+                  else if (s.id === 'stud-kartik-07') badge = '🔔 LL Alert';
+                  else if (s.id === 'stud-ananya-06') badge = '✅ Has LL';
+                  else if (s.id === 'stud-sneha-08') badge = '⏳ 8 Days';
+                  else if (s.id === 'stud-farhan-09') badge = '⚠️ Expired LL';
+
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveStudentId(s.id)}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition flex items-center gap-1 ${
+                        activeStudentId === s.id
+                          ? 'bg-blue-600 text-white font-bold shadow-sm'
+                          : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span>{s.full_name.split(' ')[0]}</span>
+                      {badge && <span className="text-[10px] opacity-90">{badge}</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -346,6 +356,7 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
                 licence={currentLicence}
                 student={currentStudent}
                 school={school}
+                enrollment={currentEnrollment}
               />
             )}
 

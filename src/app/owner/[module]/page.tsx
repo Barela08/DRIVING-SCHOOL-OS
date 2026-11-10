@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import OwnerDashboardPage from '../page';
 
 export function generateStaticParams() {
@@ -17,11 +17,16 @@ export function generateStaticParams() {
     { module: 'reports' },
     { module: 'notifications' },
     { module: 'audit-logs' },
-    { module: 'settings' }
+    { module: 'settings' },
+    { module: 'certificates' }
   ];
 }
 
 export default async function OwnerModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module } = await params;
-  return <OwnerDashboardPage initialModule={module || 'dashboard'} />;
+  return (
+    <Suspense fallback={null}>
+      <OwnerDashboardPage initialModule={module || 'dashboard'} />
+    </Suspense>
+  );
 }

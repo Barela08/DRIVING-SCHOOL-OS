@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import InstructorPortalPage from '../page';
 
 export function generateStaticParams() {
@@ -15,5 +15,9 @@ export function generateStaticParams() {
 
 export default async function InstructorModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module } = await params;
-  return <InstructorPortalPage initialModule={module || 'dashboard'} />;
+  return (
+    <Suspense fallback={null}>
+      <InstructorPortalPage initialModule={module || 'dashboard'} />
+    </Suspense>
+  );
 }

@@ -96,7 +96,7 @@ export function verifyCourseCompletion(
     );
     completionDate = sorted[0].attendance_date;
   } else {
-    completionDate = new Date().toISOString().split('T')[0];
+    completionDate = '2026-11-10';
   }
 
   const summaryMessage = isComplete

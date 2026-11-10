@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import StudentDashboardPage from '../page';
 
 export function generateStaticParams() {
@@ -22,5 +22,9 @@ export function generateStaticParams() {
 
 export default async function StudentModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module } = await params;
-  return <StudentDashboardPage initialModule={module || 'dashboard'} />;
+  return (
+    <Suspense fallback={null}>
+      <StudentDashboardPage initialModule={module || 'dashboard'} />
+    </Suspense>
+  );
 }

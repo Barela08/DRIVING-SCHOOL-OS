@@ -36,6 +36,7 @@ import {
 } from '@/types';
 import { StudentNavTab } from './StudentSidebar';
 import { MyCertificateCard } from './MyCertificateCard';
+import { StudentLLNotificationBanner } from '@/components/licence/StudentLLNotificationBanner';
 
 interface StudentDashboardHomeProps {
   student: Student;
@@ -117,6 +118,9 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Learning Licence Automatic Reminder & Milestone Tracker */}
+      <StudentLLNotificationBanner student={student} enrollment={enrollment} />
+
       {/* Top Banner Alert (If DL Test scheduled or Next class is today) */}
       {licence?.test_date && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-600/15 via-blue-500/10 to-indigo-600/15 border border-blue-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">

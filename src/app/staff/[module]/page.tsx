@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import StaffDashboardPage from '../page';
 
 export function generateStaticParams() {
@@ -20,5 +20,9 @@ export function generateStaticParams() {
 
 export default async function StaffModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module } = await params;
-  return <StaffDashboardPage initialModule={module || 'dashboard'} />;
+  return (
+    <Suspense fallback={null}>
+      <StaffDashboardPage initialModule={module || 'dashboard'} />
+    </Suspense>
+  );
 }
