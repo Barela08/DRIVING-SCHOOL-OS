@@ -19,6 +19,8 @@ import {
   Copy,
   Check
 } from 'lucide-react';
+import { ReceiptModal } from '@/components/ReceiptModal';
+import { LLRegistrationFields, LLRegistrationData } from '@/components/licence/LLRegistrationFields';
 import confetti from 'canvas-confetti';
 
 export default function AdmissionPage() {

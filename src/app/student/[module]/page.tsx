@@ -9,11 +9,13 @@ export function generateStaticParams() {
     { module: 'progress' },
     { module: 'schedule' },
     { module: 'attendance' },
+    { module: 'fees' },
     { module: 'payments' },
     { module: 'licence' },
     { module: 'documents' },
     { module: 'notifications' },
-    { module: 'help' }
+    { module: 'help' },
+    { module: 'settings' }
   ];
 }
 
