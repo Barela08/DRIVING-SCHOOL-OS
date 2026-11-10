@@ -22,13 +22,15 @@ import {
   Sun,
   Moon,
   Sparkles,
-  X
+  X,
+  Award
 } from 'lucide-react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { Student } from '@/types';
 
 export type StudentNavTab = 
   | 'dashboard'
+  | 'certificate'
   | 'profile'
   | 'course'
   | 'progress'
@@ -63,6 +65,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
   const navItems = [
     { id: 'dashboard' as StudentNavTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'certificate' as StudentNavTab, label: 'My Certificate', icon: Award },
     { id: 'profile' as StudentNavTab, label: 'My Profile', icon: User },
     { id: 'course' as StudentNavTab, label: 'My Course', icon: GraduationCap },
     { id: 'progress' as StudentNavTab, label: 'Driving Progress', icon: TrendingUp },

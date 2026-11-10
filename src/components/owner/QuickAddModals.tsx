@@ -13,6 +13,7 @@ import {
   CheckCircle2, 
   AlertCircle 
 } from 'lucide-react';
+import { LLRegistrationFields, LLRegistrationData } from '@/components/licence/LLRegistrationFields';
 
 interface QuickAddModalsProps {
   modalType: 'student' | 'instructor' | 'staff' | 'payment' | 'schedule' | 'vehicle' | null;
@@ -45,6 +46,7 @@ export const QuickAddModals: React.FC<QuickAddModalsProps> = ({ modalType, onClo
   const [studInstructorId, setStudInstructorId] = useState(instructors[0]?.id || '');
   const [studFee, setStudFee] = useState(courses[0]?.price || 8500);
   const [studDownPay, setStudDownPay] = useState(5000);
+  const [studLL, setStudLL] = useState<LLRegistrationData>({ hasExistingLL: false });
 
   // 2. Instructor
   const [insName, setInsName] = useState('');
@@ -97,7 +99,14 @@ export const QuickAddModals: React.FC<QuickAddModalsProps> = ({ modalType, onClo
           courseId: studCourseId,
           instructorId: studInstructorId,
           agreedFee: Number(studFee),
-          initialPayment: Number(studDownPay)
+          initialPayment: Number(studDownPay),
+          hasExistingLL: studLL.hasExistingLL,
+          llNumber: studLL.llNumber,
+          llIssueDate: studLL.llIssueDate,
+          llExpiryDate: studLL.llExpiryDate,
+          llVehicleCategory: studLL.llVehicleCategory,
+          llDocumentName: studLL.llDocumentName,
+          llDocumentUrl: studLL.llDocumentUrl
         });
         setAlertMsg({ type: 'success', text: res.message });
       } else if (modalType === 'instructor') {
@@ -242,6 +251,13 @@ export const QuickAddModals: React.FC<QuickAddModalsProps> = ({ modalType, onClo
                   />
                 </div>
               </div>
+
+              {/* LL Verification Section */}
+              <LLRegistrationFields
+                value={studLL}
+                onChange={setStudLL}
+                disabled={loading}
+              />
             </>
           )}
 

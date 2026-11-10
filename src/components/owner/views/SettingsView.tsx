@@ -15,14 +15,16 @@ import {
   Lock, 
   User, 
   Check, 
-  Save 
+  Save,
+  FileCheck2 
 } from 'lucide-react';
+import { LLSettingsSection } from '@/components/licence/LLSettingsSection';
 
 export const SettingsView: React.FC = () => {
   const { school, branches, currentUser, updateSchool, addToast } = useDrivingSchool();
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'profile' | 'branding' | 'branches' | 'permissions' | 'courses' | 'notifications' | 'payments' | 'security' | 'account'
+    'profile' | 'branding' | 'branches' | 'permissions' | 'courses' | 'notifications' | 'payments' | 'security' | 'account' | 'll-reminders'
   >('profile');
 
   // School profile form state
@@ -84,6 +86,7 @@ export const SettingsView: React.FC = () => {
           { id: 'payments', label: '7. Payment Settings & GST', icon: IndianRupee },
           { id: 'security', label: '8. Security & Supabase RLS', icon: Lock },
           { id: 'account', label: '9. Owner Account', icon: User },
+          { id: 'll-reminders', label: '10. LL Reminder Settings', icon: FileCheck2 },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -305,6 +308,11 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB 10: LEARNING LICENCE REMINDER SETTINGS */}
+      {activeSubTab === 'll-reminders' && (
+        <LLSettingsSection />
       )}
     </div>
   );

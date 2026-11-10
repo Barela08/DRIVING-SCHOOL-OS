@@ -16,15 +16,25 @@ import {
   CheckCircle2,
   Lock,
   Sparkles,
-  Award
+  Award,
+  Hash,
+  Send
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchRole, addToast } = useDrivingSchool();
-  const [activeRole, setActiveRole] = useState<UserRole>('instructor');
+  const { switchRole, addToast, loginStudent, students } = useDrivingSchool();
+  const [activeRole, setActiveRole] = useState<UserRole>('student');
   
-  // Form states
+  // Student Login Modes: 'id' (Student ID + Password) vs 'otp' (Mobile + OTP)
+  const [studentAuthMode, setStudentAuthMode] = useState<'id' | 'otp'>('id');
+  const [studentCode, setStudentCode] = useState('DS-2026-00101');
+  const [studentPassword, setStudentPassword] = useState('pass123');
+  const [studentMobile, setStudentMobile] = useState('98900 11223');
+  const [studentOtp, setStudentOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+
+  // Other roles form states
   const [ownerEmail, setOwnerEmail] = useState('owner@apexdriving.in');
   const [ownerPassword, setOwnerPassword] = useState('••••••••');
   
@@ -34,17 +44,46 @@ export default function LoginPage() {
   const [instructorCode, setInstructorCode] = useState('INS-2026-01');
   const [instructorPin, setInstructorPin] = useState('1234');
 
-  const [studentCode, setStudentCode] = useState('DS-2026-00101');
-  const [studentPassword, setStudentPassword] = useState('pass123');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSendOtp = () => {
+    if (!studentMobile || studentMobile.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    setError('');
+    setOtpSent(true);
+    setStudentOtp('582914');
+    addToast('OTP sent to registered mobile number: 582914 (Auto-filled for demo)', 'info');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    if (activeRole === 'student') {
+      try {
+        const identifier = studentAuthMode === 'id' ? studentCode : studentMobile;
+        const credential = studentAuthMode === 'id' ? studentPassword : (studentOtp || '582914');
+        const res = await loginStudent(identifier, credential, studentAuthMode);
+
+        if (res.success && res.student) {
+          addToast(`Welcome back, ${res.student.full_name}!`, 'success');
+          router.push('/student/dashboard');
+        } else {
+          setError(res.error || 'Authentication failed. Please verify your credentials.');
+          setLoading(false);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Login failed.');
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Other roles: owner, staff, instructor
     setTimeout(() => {
       setLoading(false);
       switchRole(activeRole);
@@ -53,7 +92,13 @@ export default function LoginPage() {
     }, 400);
   };
 
-  const handleQuickDemo = (role: UserRole) => {
+  const handleQuickDemo = (role: UserRole, targetStudentCode?: string) => {
+    if (role === 'student' && targetStudentCode) {
+      loginStudent(targetStudentCode, 'pass123', 'id');
+      addToast(`Switched to Student ${targetStudentCode}`, 'info');
+      router.push('/student/dashboard');
+      return;
+    }
     switchRole(role);
     addToast(`Quick switch to ${role.toUpperCase()} portal`, 'info');
     router.push(`/${role}/dashboard`);
@@ -71,17 +116,17 @@ export default function LoginPage() {
             Sign In to Driving School OS
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Unified authentication portal for Owner, Staff, Instructors & Students
+            Unified authentication portal with PostgreSQL RLS data isolation
           </p>
         </div>
 
         {/* 4-Role Tabs */}
         <div className="grid grid-cols-4 gap-1 bg-white dark:bg-[#111E32] p-1.5 rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm text-xs font-semibold">
           {[
-            { id: 'owner', label: 'Owner', icon: ShieldCheck },
-            { id: 'staff', label: 'Staff', icon: Users },
+            { id: 'student', label: 'Student', icon: GraduationCap },
             { id: 'instructor', label: 'Instructor', icon: Award },
-            { id: 'student', label: 'Student', icon: GraduationCap }
+            { id: 'staff', label: 'Staff', icon: Users },
+            { id: 'owner', label: 'Owner', icon: ShieldCheck }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeRole === tab.id;
@@ -111,14 +156,14 @@ export default function LoginPage() {
                 {activeRole} ACCESS
               </span>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                {activeRole === 'owner' && 'Owner Administrator Login'}
-                {activeRole === 'staff' && 'Counter & Admissions Staff Login'}
+                {activeRole === 'student' && 'Student Self-Service Portal'}
                 {activeRole === 'instructor' && 'Instructor ID & PIN Login'}
-                {activeRole === 'student' && 'Student ID & Password Login'}
+                {activeRole === 'staff' && 'Counter & Admissions Staff Login'}
+                {activeRole === 'owner' && 'Owner Administrator Login'}
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              Supabase RLS
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono">
+              RLS Isolated
             </span>
           </div>
 
@@ -129,7 +174,174 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Student Dual-Mode Login Selector */}
+          {activeRole === 'student' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 bg-[#F5F7FB] dark:bg-[#0B1728] p-1 rounded-xl border border-[#E5EAF1] dark:border-[#1E293B]">
+                <button
+                  type="button"
+                  onClick={() => { setStudentAuthMode('id'); setError(''); }}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                    studentAuthMode === 'id'
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Hash className="w-3.5 h-3.5" />
+                  <span>Student ID</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStudentAuthMode('otp'); setError(''); }}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                    studentAuthMode === 'otp'
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Mobile OTP</span>
+                </button>
+              </div>
+
+              {/* Quick Select Student Demo Accounts */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-1.5 text-xs">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">
+                  Quick Select Demo Student:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudentCode('DS-2026-00101');
+                      setStudentMobile('98900 11223');
+                      setStudentPassword('pass123');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition ${
+                      studentCode === 'DS-2026-00101'
+                        ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/40'
+                        : 'bg-white dark:bg-[#111E32] text-slate-600 dark:text-slate-400 border-[#E5EAF1] dark:border-[#1E293B]'
+                    }`}
+                  >
+                    Rahul (DS-2026-00101)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudentCode('DS-2026-00102');
+                      setStudentMobile('98220 33445');
+                      setStudentPassword('pass123');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition ${
+                      studentCode === 'DS-2026-00102'
+                        ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/40'
+                        : 'bg-white dark:bg-[#111E32] text-slate-600 dark:text-slate-400 border-[#E5EAF1] dark:border-[#1E293B]'
+                    }`}
+                  >
+                    Priya (DS-2026-00102)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudentCode('DS-2026-00103');
+                      setStudentMobile('97660 55667');
+                      setStudentPassword('pass123');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition ${
+                      studentCode === 'DS-2026-00103'
+                        ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/40'
+                        : 'bg-white dark:bg-[#111E32] text-slate-600 dark:text-slate-400 border-[#E5EAF1] dark:border-[#1E293B]'
+                    }`}
+                  >
+                    Amit (DS-2026-00103)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4 text-xs">
+            {/* Student Mode 1: Student ID + Password */}
+            {activeRole === 'student' && studentAuthMode === 'id' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">
+                    Unique Student ID (e.g. DS-2026-00101 or DS-2026-00125)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={studentCode}
+                    onChange={(e) => setStudentCode(e.target.value)}
+                    placeholder="DS-2026-00101"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">
+                    Secure Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={studentPassword}
+                    onChange={(e) => setStudentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Student Mode 2: Registered Mobile Number + OTP */}
+            {activeRole === 'student' && studentAuthMode === 'otp' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">
+                    Registered Mobile Number
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      required
+                      value={studentMobile}
+                      onChange={(e) => setStudentMobile(e.target.value)}
+                      placeholder="98900 11223"
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-medium focus:outline-none focus:border-blue-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="px-3.5 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold text-slate-800 dark:text-white flex items-center gap-1 transition shrink-0"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{otpSent ? 'Resend' : 'Send OTP'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      6-Digit Security OTP
+                    </label>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      Demo Code: 582914
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    required
+                    value={studentOtp}
+                    onChange={(e) => setStudentOtp(e.target.value)}
+                    placeholder="582914"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold tracking-widest text-center focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
+
             {/* Owner Fields */}
             {activeRole === 'owner' && (
               <>
@@ -211,34 +423,6 @@ export default function LoginPage() {
               </>
             )}
 
-            {/* Student Fields */}
-            {activeRole === 'student' && (
-              <>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Student ID or Mobile Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={studentCode}
-                    onChange={(e) => setStudentCode(e.target.value)}
-                    placeholder="e.g. DS-2026-00101"
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-600"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Password / OTP</label>
-                  <input
-                    type="password"
-                    required
-                    value={studentPassword}
-                    onChange={(e) => setStudentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
-                  />
-                </div>
-              </>
-            )}
-
             <button
               type="submit"
               disabled={loading}
@@ -262,20 +446,20 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <button
                 type="button"
-                onClick={() => handleQuickDemo('owner')}
+                onClick={() => handleQuickDemo('student', 'DS-2026-00101')}
                 className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                <span className="font-bold text-slate-900 dark:text-white block">👑 Owner</span>
-                <span className="text-[10px] text-slate-400">Rajesh Mehta</span>
+                <span className="font-bold text-slate-900 dark:text-white block">🎓 Rahul (Student)</span>
+                <span className="text-[10px] text-slate-400">DS-2026-00101</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickDemo('staff')}
+                onClick={() => handleQuickDemo('student', 'DS-2026-00102')}
                 className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                <span className="font-bold text-slate-900 dark:text-white block">📋 Staff</span>
-                <span className="text-[10px] text-slate-400">Sunita Patil</span>
+                <span className="font-bold text-slate-900 dark:text-white block">🎓 Priya (Student)</span>
+                <span className="text-[10px] text-slate-400">DS-2026-00102</span>
               </button>
 
               <button
@@ -289,11 +473,11 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleQuickDemo('student')}
+                onClick={() => handleQuickDemo('owner')}
                 className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                <span className="font-bold text-slate-900 dark:text-white block">🎓 Student</span>
-                <span className="text-[10px] text-slate-400">Rahul Sharma</span>
+                <span className="font-bold text-slate-900 dark:text-white block">👑 Owner</span>
+                <span className="text-[10px] text-slate-400">Rajesh Mehta</span>
               </button>
             </div>
           </div>

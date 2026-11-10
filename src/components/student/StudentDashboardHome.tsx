@@ -31,9 +31,11 @@ import {
   ClassSchedule, 
   Instructor, 
   Vehicle, 
-  NotificationItem 
+  NotificationItem,
+  CourseCertificate
 } from '@/types';
 import { StudentNavTab } from './StudentSidebar';
+import { MyCertificateCard } from './MyCertificateCard';
 
 interface StudentDashboardHomeProps {
   student: Student;
@@ -45,8 +47,13 @@ interface StudentDashboardHomeProps {
   instructor?: Instructor;
   vehicle?: Vehicle;
   notifications: NotificationItem[];
+  certificate?: CourseCertificate;
   onSelectTab: (tab: StudentNavTab) => void;
   onOpenReceipt: (payment: Payment) => void;
+  onOpenCertificatePreview?: () => void;
+  onDownloadCertificate?: () => void;
+  onSimulateCompletion?: () => void;
+  isSimulating?: boolean;
 }
 
 export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
@@ -59,8 +66,13 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
   instructor,
   vehicle,
   notifications,
+  certificate,
   onSelectTab,
-  onOpenReceipt
+  onOpenReceipt,
+  onOpenCertificatePreview,
+  onDownloadCertificate,
+  onSimulateCompletion,
+  isSimulating
 }) => {
   // Financial calculations
   const confirmedPayments = payments.filter(p => p.status === 'Confirmed');
@@ -193,6 +205,17 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
           </div>
         </div>
       </div>
+
+      {/* DEDICATED COURSE COMPLETION CERTIFICATE SECTION */}
+      <MyCertificateCard
+        student={student}
+        enrollment={enrollment}
+        certificate={certificate}
+        onOpenPreview={onOpenCertificatePreview || (() => {})}
+        onDownloadClick={onDownloadCertificate || (() => {})}
+        onSimulateCompletion={onSimulateCompletion}
+        isSimulating={isSimulating}
+      />
 
       {/* Section 5: The 6 Mandatory KPI Cards */}
       <div className="space-y-3">

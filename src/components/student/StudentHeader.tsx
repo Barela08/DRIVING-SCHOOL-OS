@@ -29,6 +29,10 @@ const TAB_TITLES: Record<StudentNavTab, { title: string; subtitle: string }> = {
     title: 'My Dashboard',
     subtitle: 'Track your driving lessons, payments and licence progress.'
   },
+  certificate: {
+    title: 'My Certificate',
+    subtitle: 'Verified course completion certificate, digital QR credential and grade.'
+  },
   profile: {
     title: 'My Profile',
     subtitle: 'Manage your verified identification and contact details.'

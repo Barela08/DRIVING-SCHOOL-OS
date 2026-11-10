@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { Payment } from '@/types';
 import { ReceiptModal } from '@/components/ReceiptModal';
+import { MyCertificateCard } from '@/components/student/MyCertificateCard';
+import { CertificatePreviewModal } from '@/components/modals/CertificatePreviewModal';
 
 import { StudentSidebar, StudentNavTab } from '@/components/student/StudentSidebar';
 import { StudentHeader } from '@/components/student/StudentHeader';
@@ -19,6 +21,8 @@ import { StudentDocuments } from '@/components/student/StudentDocuments';
 import { StudentNotifications } from '@/components/student/StudentNotifications';
 import { StudentHelpSupport } from '@/components/student/StudentHelpSupport';
 import { StudentSettings } from '@/components/student/StudentSettings';
+import { StudentCertificateView } from '@/components/student/StudentCertificateView';
+import { CertificateFeedbackModal } from '@/components/modals/CertificateFeedbackModal';
 
 interface StudentDashboardPageProps {
   initialModule?: string;
@@ -30,6 +34,7 @@ const normalizeTab = (module?: string): StudentNavTab => {
   if (clean === 'payments') return 'fees';
   if (
     clean === 'dashboard' ||
+    clean === 'certificate' ||
     clean === 'profile' ||
     clean === 'course' ||
     clean === 'progress' ||
@@ -64,7 +69,12 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
     studentDocuments,
     supportTickets,
     activeStudentId,
-    setActiveStudentId
+    setActiveStudentId,
+    certificates,
+    certificateFeedbacks,
+    logCertificateDownload,
+    markAttendance,
+    addToast
   } = useDrivingSchool();
 
   // Determine active student with strict privacy isolation
@@ -92,6 +102,12 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
   const studentDocs = studentDocuments.filter(d => d.student_id === currentStudent?.id);
   const studentTickets = supportTickets.filter(t => t.student_id === currentStudent?.id);
 
+  // Scoped certificate & certificate feedbacks
+  const currentCertificate = certificates.find(c => c.student_id === currentStudent?.id);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+
   // Scoped notifications
   const scopedNotifications = notifications.filter(
     n => !n.student_id || n.student_id === currentStudent?.id
@@ -102,6 +118,58 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
   const [activeTab, setActiveTab] = useState<StudentNavTab>(normalizeTab(initialModule));
   const [isOpenMobile, setIsOpenMobile] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
+
+  // Certificate Download Handler: triggers voluntary feedback & Google review on first download
+  const handleDownloadClick = () => {
+    if (!currentCertificate) return;
+    const hasFeedback = certificateFeedbacks.some(f => f.student_id === currentStudent.id);
+    if (!hasFeedback) {
+      setIsFeedbackOpen(true);
+    } else {
+      executeDownload();
+    }
+  };
+
+  const executeDownload = async () => {
+    if (!currentCertificate) return;
+    await logCertificateDownload(currentCertificate.id);
+    if (currentCertificate.pdf_data_url) {
+      const a = document.createElement('a');
+      a.href = currentCertificate.pdf_data_url;
+      a.download = `Certificate_${currentCertificate.certificate_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      addToast(`Downloading Certificate #${currentCertificate.certificate_number}...`, 'success');
+    } else {
+      addToast('Certificate PDF is preparing, please try again.', 'info');
+    }
+  };
+
+  // Instant Real-Time Attendance Completion Simulator (Demo Testing)
+  const handleSimulateCompletion = async () => {
+    if (!currentEnrollment) return;
+    setIsSimulating(true);
+    try {
+      const allocations = currentEnrollment.session_allocations || [];
+      for (const sa of allocations) {
+        const remaining = sa.allocated_count - sa.completed_count;
+        for (let i = 0; i < remaining; i++) {
+          await markAttendance({
+            enrollmentId: currentEnrollment.id,
+            sessionAllocationId: sa.id,
+            instructorId: currentEnrollment.assigned_instructor_id || 'ins-vikram-01',
+            remarks: 'Practical session verified for course completion.'
+          });
+        }
+      }
+      addToast('🎓 All required classes marked! Automatic certificate generated.', 'success');
+    } catch (e) {
+      console.error('Simulation error:', e);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   useEffect(() => {
     if (initialModule) {
@@ -159,6 +227,39 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
         {/* Main Content Workspace */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-all duration-300">
           <div className="max-w-6xl mx-auto space-y-6">
+            {/* Student Account Switcher Bar (Demo & Testing Feature) */}
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700 dark:text-slate-300">Active Learner Session:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">{currentStudent.full_name}</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">{currentStudent.student_code}</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  currentStudent.status === 'Course Completed'
+                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                    : 'bg-amber-500/10 text-amber-600 border border-amber-500/30'
+                }`}>
+                  {currentStudent.status}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] text-slate-500">Switch Test Learner:</span>
+                {students.slice(0, 4).map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveStudentId(s.id)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition ${
+                      activeStudentId === s.id
+                        ? 'bg-blue-600 text-white font-bold shadow-sm'
+                        : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {s.full_name.split(' ')[0]} {s.id === 'stud-amit-03' ? '🎓' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {activeTab === 'dashboard' && (
               <StudentDashboardHome
                 student={currentStudent}
@@ -170,8 +271,26 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
                 instructor={assignedInstructor}
                 vehicle={assignedVehicle}
                 notifications={scopedNotifications}
+                certificate={currentCertificate}
                 onSelectTab={handleSelectTab}
                 onOpenReceipt={(payment) => setSelectedReceipt(payment)}
+                onOpenCertificatePreview={() => setIsPreviewOpen(true)}
+                onDownloadCertificate={handleDownloadClick}
+                onSimulateCompletion={handleSimulateCompletion}
+                isSimulating={isSimulating}
+              />
+            )}
+
+            {activeTab === 'certificate' && (
+              <StudentCertificateView
+                student={currentStudent}
+                enrollment={currentEnrollment}
+                certificate={currentCertificate}
+                feedbacks={certificateFeedbacks}
+                onOpenPreview={() => setIsPreviewOpen(true)}
+                onDownloadClick={handleDownloadClick}
+                onSimulateCompletion={handleSimulateCompletion}
+                isSimulating={isSimulating}
               />
             )}
 
@@ -268,6 +387,22 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
         payment={selectedReceipt}
         school={school}
         onClose={() => setSelectedReceipt(null)}
+      />
+
+      {/* Certificate Preview Modal */}
+      <CertificatePreviewModal
+        certificate={currentCertificate || null}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        onDownloadRequest={handleDownloadClick}
+      />
+
+      {/* Voluntary Feedback & Google Review Modal */}
+      <CertificateFeedbackModal
+        certificate={currentCertificate || null}
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        onProceedToDownload={executeDownload}
       />
     </div>
   );
