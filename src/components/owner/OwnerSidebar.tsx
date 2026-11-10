@@ -26,6 +26,7 @@ import {
   LogOut, 
   HelpCircle, 
   Car,
+  ShieldAlert,
   X
 } from 'lucide-react';
 
@@ -46,7 +47,8 @@ export type OwnerNavSection =
   | 'reports'
   | 'audit'
   | 'settings'
-  | 'certificates';
+  | 'certificates'
+  | 'security';
 
 export interface OwnerSidebarProps {
   activeSection: OwnerNavSection;
@@ -90,6 +92,7 @@ export const OwnerSidebar: React.FC<OwnerSidebarProps> = ({
     { id: 'audit', label: '15. Audit Logs', icon: History },
     { id: 'settings', label: '16. Settings', icon: Settings },
     { id: 'certificates', label: '17. Certificates & Reviews', icon: Award },
+    { id: 'security', label: '18. Security & Auth Monitoring', icon: ShieldAlert },
   ];
 
   const handleNavClick = (section: OwnerNavSection) => {

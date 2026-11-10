@@ -37,6 +37,7 @@ import {
 import { StudentNavTab } from './StudentSidebar';
 import { MyCertificateCard } from './MyCertificateCard';
 import { StudentLLNotificationBanner } from '@/components/licence/StudentLLNotificationBanner';
+import { StudentCourseCalendar } from './StudentCourseCalendar';
 
 interface StudentDashboardHomeProps {
   student: Student;
@@ -628,6 +629,17 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Course Calendar: 30-Day Course Slots & Attendance Progress */}
+      <div className="pt-2">
+        <StudentCourseCalendar
+          enrollment={enrollment}
+          attendance={attendance}
+          schedules={schedules}
+          instructor={instructor}
+          vehicle={vehicle}
+        />
       </div>
     </div>
   );

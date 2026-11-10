@@ -16,20 +16,25 @@ import {
   MapPin,
   Check
 } from 'lucide-react';
-import { Course, Enrollment, Instructor, Vehicle } from '@/types';
+import { Course, Enrollment, Instructor, Vehicle, AttendanceRecord, ClassSchedule } from '@/types';
+import { StudentCourseCalendar } from './StudentCourseCalendar';
 
 interface StudentCourseProps {
   course?: Course;
   enrollment: Enrollment;
   instructor?: Instructor;
   vehicle?: Vehicle;
+  attendance?: AttendanceRecord[];
+  schedules?: ClassSchedule[];
 }
 
 export const StudentCourse: React.FC<StudentCourseProps> = ({
   course,
   enrollment,
   instructor,
-  vehicle
+  vehicle,
+  attendance,
+  schedules
 }) => {
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
@@ -246,6 +251,20 @@ export const StudentCourse: React.FC<StudentCourseProps> = ({
           })}
         </div>
       </div>
+
+      {/* Course Duration Calendar Progress */}
+      {attendance && (
+        <div className="pt-2">
+          <StudentCourseCalendar
+            enrollment={enrollment}
+            course={course}
+            attendance={attendance}
+            schedules={schedules || []}
+            instructor={instructor}
+            vehicle={vehicle}
+          />
+        </div>
+      )}
     </div>
   );
 };

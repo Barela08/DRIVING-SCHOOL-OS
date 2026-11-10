@@ -225,10 +225,10 @@ export default function AdmissionPage() {
             {/* Actions */}
             <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
               <Link
-                href="/student"
+                href="/login"
                 className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 transition"
               >
-                Go to Student Portal <ArrowRight className="w-4 h-4" />
+                Sign In to Student Portal <ArrowRight className="w-4 h-4" />
               </Link>
               <button
                 onClick={() => window.print()}

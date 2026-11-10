@@ -25,6 +25,7 @@ import { ReportsView } from '@/components/owner/views/ReportsView';
 import { AuditLogsView } from '@/components/owner/views/AuditLogsView';
 import { SettingsView } from '@/components/owner/views/SettingsView';
 import { CertificateManagement } from '@/components/owner/CertificateManagement';
+import { SecurityView } from '@/components/owner/views/SecurityView';
 
 // Modals
 import { StudentDetailModal } from '@/components/modals/StudentDetailModal';
@@ -39,7 +40,7 @@ import { Student, Payment, LicenceRecord, Instructor } from '@/types';
 
 export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { initialModule?: string } = {}) {
   const router = useRouter();
-  const { school, switchRole, addToast } = useDrivingSchool();
+  const { school, switchRole, addToast, logoutUser } = useDrivingSchool();
 
   // Active Navigation Section (1-16)
   const [activeSection, setActiveSection] = useState<OwnerNavSection>((initialModule as OwnerNavSection) || 'dashboard');
@@ -57,7 +58,8 @@ export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { in
   const [quickAddType, setQuickAddType] = useState<'student' | 'instructor' | 'staff' | 'payment' | 'schedule' | 'vehicle' | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutUser();
     addToast('Logged out of Owner Console', 'info');
     router.push('/login');
   };
@@ -192,6 +194,10 @@ export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { in
 
           {activeSection === 'certificates' && (
             <CertificateManagement />
+          )}
+
+          {activeSection === 'security' && (
+            <SecurityView />
           )}
         </main>
       </div>

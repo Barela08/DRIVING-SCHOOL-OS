@@ -264,6 +264,21 @@ interface DrivingSchoolContextType {
   logCertificateDownload: (certificateId: string) => Promise<{ success: boolean }>;
   updateCertificateTemplate: (templateData: Partial<CertificateTemplate>) => Promise<{ success: boolean; message: string }>;
   updateSchoolSettings: (settings: { google_review_url?: string; auto_issue_certificates?: boolean }) => Promise<{ success: boolean; message: string }>;
+  loginSingleUser: (
+    identifier: string, 
+    passwordOrPin: string, 
+    extra?: { captchaToken?: string; captchaAnswer?: string }
+  ) => Promise<{ 
+    success: boolean; 
+    role?: UserRole; 
+    redirectTo?: string; 
+    error?: string;
+    isLockedOut?: boolean;
+    lockoutRemainingSeconds?: number;
+    requireCaptcha?: boolean;
+    captchaChallenge?: any;
+  }>;
+  logoutUser: () => Promise<void>;
 }
 
 const DrivingSchoolContext = createContext<DrivingSchoolContextType | null>(null);
@@ -273,28 +288,28 @@ const DEFAULT_USERS: Record<UserRole, UserProfile> = {
     id: 'usr-owner-rajesh',
     full_name: 'Rajesh Mehta',
     phone: '+91 98220 99887',
-    email: 'owner@apexdriving.in',
+    email: 'owner@modeldriving.in',
     is_active: true,
     role: 'owner',
-    school_id: 'school-apex-001'
+    school_id: 'school-model-001'
   },
   staff: {
     id: 'usr-staff-sunita',
     full_name: 'Sunita Patil',
     phone: '+91 98220 55443',
-    email: 'staff@apexdriving.in',
+    email: 'staff@modeldriving.in',
     is_active: true,
     role: 'staff',
-    school_id: 'school-apex-001'
+    school_id: 'school-model-001'
   },
   instructor: {
     id: 'usr-ins-vikram',
     full_name: 'Vikram Shinde',
     phone: '+91 98220 12345',
-    email: 'vikram.instructor@apexdriving.in',
+    email: 'vikram.instructor@modeldriving.in',
     is_active: true,
     role: 'instructor',
-    school_id: 'school-apex-001'
+    school_id: 'school-model-001'
   },
   student: {
     id: 'usr-stud-rahul',
@@ -303,7 +318,7 @@ const DEFAULT_USERS: Record<UserRole, UserProfile> = {
     email: 'rahul.sharma@gmail.com',
     is_active: true,
     role: 'student',
-    school_id: 'school-apex-001'
+    school_id: 'school-model-001'
   }
 };
 
@@ -387,12 +402,19 @@ export const DrivingSchoolProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [activeStudentId, role, students]);
 
-  // Switch role handler
+  // Switch role handler with session cookie synchronization
   const switchRole = (newRole: UserRole) => {
     setRole(newRole);
+    if (typeof document !== 'undefined') {
+      document.cookie = `ds_role=${newRole}; path=/; max-age=604800`;
+      document.cookie = `ds_auth_session=${JSON.stringify({ role: newRole, userId: DEFAULT_USERS[newRole]?.id })}; path=/; max-age=604800`;
+    }
     if (newRole === 'student') {
       const activeStud = students.find(s => s.id === activeStudentId) || students[0];
       if (activeStud) {
+        if (typeof document !== 'undefined') {
+          document.cookie = `ds_student_id=${activeStud.id}; path=/; max-age=604800`;
+        }
         setCurrentUser({
           id: activeStud.user_id || `usr-${activeStud.id}`,
           full_name: activeStud.full_name,
@@ -407,6 +429,94 @@ export const DrivingSchoolProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     setCurrentUser(DEFAULT_USERS[newRole]);
   };
+
+  // Unified Single Login System (Module 3 & 4)
+  const loginSingleUser = async (
+    identifier: string, 
+    passwordOrPin: string,
+    extra?: { captchaToken?: string; captchaAnswer?: string }
+  ) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          identifier, 
+          passwordOrPin,
+          captchaToken: extra?.captchaToken,
+          captchaAnswer: extra?.captchaAnswer
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.role) {
+        setRole(data.role);
+        if (typeof document !== 'undefined') {
+          document.cookie = `ds_role=${data.role}; path=/; max-age=604800`;
+          document.cookie = `ds_auth_session=${JSON.stringify(data.user)}; path=/; max-age=604800`;
+        }
+        if (data.role === 'student' && data.user.studentId) {
+          setActiveStudentId(data.user.studentId);
+          if (typeof document !== 'undefined') {
+            document.cookie = `ds_student_id=${data.user.studentId}; path=/; max-age=604800`;
+          }
+          const activeStud = students.find(s => s.id === data.user.studentId);
+          if (activeStud) {
+            setCurrentUser({
+              id: activeStud.user_id || `usr-${activeStud.id}`,
+              full_name: activeStud.full_name,
+              phone: activeStud.phone,
+              email: activeStud.email,
+              is_active: true,
+              role: 'student',
+              school_id: activeStud.school_id
+            });
+          }
+        } else {
+          setCurrentUser(DEFAULT_USERS[data.role as UserRole]);
+        }
+        return { success: true, role: data.role as UserRole, redirectTo: data.redirectTo };
+      }
+      return { 
+        success: false, 
+        error: data.error || 'Authentication failed',
+        isLockedOut: data.isLockedOut,
+        lockoutRemainingSeconds: data.lockoutRemainingSeconds,
+        requireCaptcha: data.requireCaptcha,
+        captchaChallenge: data.captchaChallenge
+      };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Login request failed' };
+    }
+  };
+
+  const logoutUser = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
+    if (typeof document !== 'undefined') {
+      document.cookie = 'ds_role=; path=/; max-age=0';
+      document.cookie = 'ds_auth_session=; path=/; max-age=0';
+      document.cookie = 'ds_student_id=; path=/; max-age=0';
+    }
+    setRole('owner');
+    setCurrentUser(DEFAULT_USERS.owner);
+  };
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/ds_role=([^;]+)/);
+      if (match && match[1]) {
+        const cRole = match[1] as UserRole;
+        if (['owner', 'staff', 'instructor', 'student'].includes(cRole)) {
+          setRole(cRole);
+          const studentMatch = document.cookie.match(/ds_student_id=([^;]+)/);
+          if (cRole === 'student' && studentMatch && studentMatch[1]) {
+            setActiveStudentId(studentMatch[1]);
+          }
+        }
+      }
+    }
+  }, []);
 
   // 1. One-Click Atomic Attendance Marking
   const markAttendance = async ({
@@ -2167,6 +2277,8 @@ export const DrivingSchoolProvider: React.FC<{ children: React.ReactNode }> = ({
         submitStudentPayment,
         submitSupportTicket,
         loginStudent,
+        loginSingleUser,
+        logoutUser,
         // Learning Licence & Reminders
         llReminderSettings,
         updateLLReminderSettings,

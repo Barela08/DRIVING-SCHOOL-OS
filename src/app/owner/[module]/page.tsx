@@ -18,7 +18,8 @@ export function generateStaticParams() {
     { module: 'notifications' },
     { module: 'audit-logs' },
     { module: 'settings' },
-    { module: 'certificates' }
+    { module: 'certificates' },
+    { module: 'security' }
   ];
 }
 

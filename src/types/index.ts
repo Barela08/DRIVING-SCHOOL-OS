@@ -530,3 +530,58 @@ export interface CertificateDownloadLog {
   ip_address?: string;
 }
 
+
+// ============================================================================
+// SECURITY, AUTHENTICATION & RATE LIMITING TYPES
+// ============================================================================
+
+export type SecurityEventType = 
+  | 'LOGIN_SUCCESS'
+  | 'LOGIN_FAILURE'
+  | 'TEMPORARY_LOCKOUT'
+  | 'RATE_LIMIT_EXCEEDED'
+  | 'OTP_GENERATED'
+  | 'OTP_VERIFIED'
+  | 'OTP_ABUSE'
+  | 'PASSWORD_RESET_REQUESTED'
+  | 'PASSWORD_RESET_COMPLETED'
+  | 'SUSPICIOUS_ACTIVITY'
+  | 'ACCOUNT_DISABLED_ATTEMPT'
+  | 'LOGOUT'
+  | 'SESSION_REVOKED';
+
+export interface SecurityLog {
+  id: string;
+  school_id: string;
+  event_type: SecurityEventType;
+  masked_identifier: string;
+  ip_address: string;
+  user_agent: string;
+  status: 'SUCCESS' | 'FAILURE' | 'BLOCKED' | 'FLAGGED';
+  severity: 'info' | 'warning' | 'danger' | 'critical';
+  details?: Record<string, any>;
+  created_at: string;
+}
+
+export interface RateLimitStatus {
+  allowed: boolean;
+  attempts: number;
+  remaining: number;
+  isLockedOut: boolean;
+  lockoutRemainingSeconds: number;
+  resetInSeconds: number;
+  requireCaptcha: boolean;
+  reason?: string;
+}
+
+export interface AuthSessionUser {
+  userId: string;
+  role: UserRole;
+  name: string;
+  identifier: string;
+  studentId?: string;
+  instructorId?: string;
+  employeeId?: string;
+  permissions?: StaffMember['permissions'];
+  authenticatedAt: string;
+}

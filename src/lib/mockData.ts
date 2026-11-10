@@ -33,11 +33,11 @@ export const mockLLReminderSettings: LLReminderSettings = {
 };
 
 export const mockSchool: School = {
-  id: 'school-apex-001',
-  name: 'Apex Motor Driving School',
-  slug: 'apex-driving-school',
+  id: 'school-model-001',
+  name: 'Model Driving Academy',
+  slug: 'model-driving-academy',
   contact_phone: '+91 98220 99887',
-  contact_email: 'admin@apexdriving.in',
+  contact_email: 'admin@modeldriving.in',
   address: {
     street: 'Plot 42, Near RTO Circle, MG Road',
     city: 'Pune',
@@ -45,11 +45,11 @@ export const mockSchool: School = {
     pincode: '411001'
   },
   logo_url: '/logo.svg',
-  tagline: 'Govt. RTO Authorized Driving Institute & Licensing Specialist',
+  tagline: 'Operating System for Model Driving Academy',
   rto_registration_no: 'MH-12/MDS/2018/042',
   timezone: 'Asia/Kolkata',
   currency: 'INR',
-  google_review_url: 'https://g.page/r/apex-driving-school/review',
+  google_review_url: 'https://g.page/r/model-driving-academy/review',
   auto_issue_certificates: true,
   created_at: '2024-01-01T00:00:00Z'
 };

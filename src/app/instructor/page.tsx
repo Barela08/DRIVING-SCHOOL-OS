@@ -24,10 +24,13 @@ import {
   Check,
   Send,
   Lock,
-  ChevronLeft
+  ChevronLeft,
+  FileCheck2,
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Student, Enrollment, EnrollmentSessionAllocation, AttendanceRecord } from '@/types';
+import { getStudentLLProgress } from '@/lib/llTrackingEngine';
 
 interface InstructorPortalProps {
   initialModule?: string;
@@ -42,6 +45,9 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
     enrollments, 
     attendanceRecords, 
     schedules, 
+    licenceRecords,
+    llReminderSettings,
+    studentDocuments,
     notifications, 
     markAttendance,
     currentUser,
@@ -195,7 +201,7 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
   return (
     <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col">
       {/* Mobile-Friendly Top Navigation */}
-      <div className="bg-[#111E32] border-b border-[#1E293B] text-white py-3 px-4 sm:px-6 flex items-center justify-between sticky top-[53px] z-30">
+      <div className="bg-[#111E32] border-b border-[#1E293B] text-white py-3 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileDrawerOpen(true)}
@@ -228,12 +234,24 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
           >
             <Search className="w-3.5 h-3.5" /> Quick Student Look-up
           </button>
+          <button
+            onClick={async () => {
+              if (window.confirm('Sign out of instructor portal?')) {
+                document.cookie = 'ds_role=; path=/; max-age=0';
+                document.cookie = 'ds_auth_session=; path=/; max-age=0';
+                window.location.href = '/login';
+              }
+            }}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 text-xs font-bold transition ml-1"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
       <div className="flex-1 flex">
         {/* Fixed Desktop Sidebar */}
-        <aside className={`hidden lg:block fixed left-0 top-[102px] bottom-0 z-20 bg-[#111E32] border-r border-[#1E293B] transition-all duration-300 ${
+        <aside className={`hidden lg:block fixed left-0 top-[57px] bottom-0 z-20 bg-[#111E32] border-r border-[#1E293B] transition-all duration-300 ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}>
           <div className="flex flex-col h-full py-4 px-2 space-y-1">
@@ -512,6 +530,57 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
                     </div>
                   </div>
 
+                  {/* Learning Licence Tracking & Attendance Status */}
+                  {(() => {
+                    const searchedLic = licenceRecords.find(l => l.student_id === searchedStudent.id);
+                    const searchedLL = getStudentLLProgress(
+                      searchedStudent,
+                      searchedEnrollment,
+                      attendanceRecords,
+                      searchedLic,
+                      llReminderSettings,
+                      studentDocuments
+                    );
+
+                    return (
+                      <div className="p-4 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            searchedLL.hasExistingLL || searchedLL.llStatus === 'Approved'
+                              ? 'bg-emerald-500/20 text-emerald-500'
+                              : searchedLL.isEligibleForReminder
+                              ? 'bg-amber-500/20 text-amber-500'
+                              : 'bg-blue-500/10 text-blue-500'
+                          }`}>
+                            <FileCheck2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white">Learning Licence (LL) Status:</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${searchedLL.statusBadge.bg} ${searchedLL.statusBadge.color} border ${searchedLL.statusBadge.border}`}>
+                                {searchedLL.statusBadge.label}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              {searchedLL.hasExistingLL
+                                ? `Valid LL on record (${searchedLL.llNumber || 'Verified'}). Expiry: ${searchedLL.llExpiryDate || 'N/A'}`
+                                : searchedLL.isEligibleForReminder
+                                ? 'Student has attended required class days and is eligible to apply for LL on Sarathi portal.'
+                                : `Attended ${searchedLL.totalAttendedClassDays} of ${llReminderSettings.required_attended_days} required class days for LL application milestone.`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="sm:text-right shrink-0">
+                          <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-sm">
+                            {searchedLL.totalAttendedClassDays} / {llReminderSettings.required_attended_days} Days
+                          </span>
+                          <span className="block text-[10px] text-slate-400">Attended Class Days</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Session Categories Selection */}
                   <div className="space-y-3">
                     <label className="font-bold text-xs text-slate-700 dark:text-slate-300 block uppercase tracking-wider text-[11px]">
@@ -624,12 +693,23 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
                       <th className="px-4 py-3">Course</th>
                       <th className="px-4 py-3">Phone</th>
                       <th className="px-4 py-3">Progress</th>
+                      <th className="px-4 py-3">Learning Licence</th>
                       <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5EAF1] dark:divide-[#1E293B]">
                     {myStudents.map(s => {
                       const enr = enrollments.find(e => e.student_id === s.id);
+                      const lic = licenceRecords.find(l => l.student_id === s.id);
+                      const progress = getStudentLLProgress(
+                        s,
+                        enr,
+                        attendanceRecords,
+                        lic,
+                        llReminderSettings,
+                        studentDocuments
+                      );
+
                       return (
                         <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                           <td className="px-4 py-3.5 font-mono font-bold text-blue-600 dark:text-blue-400">{s.student_code}</td>
@@ -638,6 +718,16 @@ export default function InstructorPortalPage({ initialModule = 'dashboard' }: In
                           <td className="px-4 py-3.5 font-mono">{s.phone}</td>
                           <td className="px-4 py-3.5 font-mono font-bold text-emerald-600">
                             {enr ? `${enr.completed_sessions} / ${enr.total_sessions}` : '0 / 20'}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${progress.statusBadge.bg} ${progress.statusBadge.color} border ${progress.statusBadge.border}`}>
+                              {progress.statusBadge.label}
+                            </span>
+                            <span className="block text-[10px] text-slate-400 mt-0.5">
+                              {progress.hasExistingLL
+                                ? 'Existing LL'
+                                : `${progress.totalAttendedClassDays}/${llReminderSettings.required_attended_days} Days attended`}
+                            </span>
                           </td>
                           <td className="px-4 py-3.5 text-right">
                             <button

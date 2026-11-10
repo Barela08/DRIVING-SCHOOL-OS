@@ -30,6 +30,7 @@ import { Student } from '@/types';
 
 export type StudentNavTab = 
   | 'dashboard'
+  | 'calendar'
   | 'certificate'
   | 'profile'
   | 'course'
@@ -61,10 +62,11 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
   unreadCount
 }) => {
   const router = useRouter();
-  const { school, theme, toggleTheme, switchRole } = useDrivingSchool();
+  const { school, theme, toggleTheme, logoutUser } = useDrivingSchool();
 
   const navItems = [
     { id: 'dashboard' as StudentNavTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'calendar' as StudentNavTab, label: 'Course Calendar', icon: Calendar },
     { id: 'certificate' as StudentNavTab, label: 'My Certificate', icon: Award },
     { id: 'profile' as StudentNavTab, label: 'My Profile', icon: User },
     { id: 'course' as StudentNavTab, label: 'My Course', icon: GraduationCap },
@@ -83,8 +85,8 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
     { id: 'help' as StudentNavTab, label: 'Help & Support', icon: HelpCircle },
   ];
 
-  const handleLogout = () => {
-    switchRole('owner'); // Reset back to default
+  const handleLogout = async () => {
+    await logoutUser();
     router.push('/login');
   };
 

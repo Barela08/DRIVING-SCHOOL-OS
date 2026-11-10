@@ -206,6 +206,8 @@ CREATE TABLE IF NOT EXISTS public.students (
     blood_group TEXT,
     address JSONB DEFAULT '{}'::jsonb,
     emergency_contact JSONB DEFAULT '{}'::jsonb,
+    has_existing_ll BOOLEAN DEFAULT false,
+    ll_number TEXT,
     admission_date DATE NOT NULL DEFAULT CURRENT_DATE,
     status TEXT NOT NULL DEFAULT 'Registered' CHECK (status IN ('Inquiry', 'Registered', 'Active', 'On Hold', 'Course Completed', 'Cancelled')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -374,9 +376,23 @@ CREATE TABLE IF NOT EXISTS public.licence_records (
     school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
     licence_type TEXT NOT NULL DEFAULT 'MCWG + LMV',
+    has_existing_ll BOOLEAN DEFAULT false,
+    ll_number TEXT,
+    ll_vehicle_category TEXT,
+    ll_document_url TEXT,
+    ll_document_name TEXT,
+    ll_document_verified BOOLEAN DEFAULT false,
+    application_number TEXT,
+    approval_date DATE,
+    attended_class_days_count INT DEFAULT 0,
+    reminder_eligible BOOLEAN DEFAULT false,
+    reminder_count INT DEFAULT 0,
+    last_reminder_sent_date TIMESTAMPTZ,
+    last_status_updated_by TEXT,
+    last_status_updated_at TIMESTAMPTZ,
     ll_application_date DATE,
     ll_reference TEXT,
-    ll_status TEXT NOT NULL DEFAULT 'Not Started' CHECK (ll_status IN ('Not Started', 'Documents Pending', 'Application Submitted', 'LL Test Scheduled', 'LL Approved', 'Rejected')),
+    ll_status TEXT NOT NULL DEFAULT 'Not Applied' CHECK (ll_status IN ('Not Started', 'Documents Pending', 'Application Submitted', 'LL Test Scheduled', 'LL Approved', 'Rejected', 'Not Applied', 'Already Available', 'Reminder Sent', 'Application Started', 'Test Scheduled', 'Approved', 'Document Uploaded', 'DL Test Scheduled', 'Test Passed', 'Licence Issued')),
     ll_issue_date DATE,
     ll_valid_till DATE,
     dl_application_date DATE,
@@ -402,6 +418,20 @@ CREATE TABLE IF NOT EXISTS public.licence_events (
     description TEXT,
     created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Learning Licence Automatic Reminder & Policy Settings
+CREATE TABLE IF NOT EXISTS public.school_ll_reminder_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE UNIQUE,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    required_attended_days INT NOT NULL DEFAULT 10 CHECK (required_attended_days >= 1),
+    min_completed_sessions INT NOT NULL DEFAULT 5 CHECK (min_completed_sessions >= 0),
+    frequency TEXT NOT NULL DEFAULT 'every_7_days' CHECK (frequency IN ('once', 'every_3_days', 'every_7_days', 'every_14_days')),
+    notify_owner BOOLEAN NOT NULL DEFAULT true,
+    notify_student BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 -- ---------------------------------------------------------------------
@@ -712,6 +742,7 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.licence_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.licence_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_ll_reminder_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Helper function: get caller role in a school
@@ -865,6 +896,23 @@ USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
 CREATE POLICY licence_student_read ON public.licence_records FOR SELECT TO authenticated
 USING (
     student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+CREATE POLICY licence_student_update ON public.licence_records FOR UPDATE TO authenticated
+USING (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+)
+WITH CHECK (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+-- LL Reminder Policy Settings
+CREATE POLICY ll_settings_owner_staff ON public.school_ll_reminder_settings FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY ll_settings_student_read ON public.school_ll_reminder_settings FOR SELECT TO authenticated
+USING (
+    school_id IN (SELECT school_id FROM public.students WHERE user_id = auth.uid())
 );
 
 CREATE POLICY licence_events_student_read ON public.licence_events FOR SELECT TO authenticated
@@ -1280,3 +1328,205 @@ AFTER INSERT OR UPDATE OF status ON public.attendance_records
 FOR EACH ROW
 EXECUTE FUNCTION public.fn_check_course_completion_and_issue_cert();
 
+
+
+-- ============================================================================
+-- MODEL DRIVING ACADEMY — ADVANCED RATE LIMITING, AUDIT & SECURITY SYSTEM
+-- ============================================================================
+
+-- Rate Limiting Table (Atomic, Concurrency-Safe)
+CREATE TABLE IF NOT EXISTS public.auth_rate_limits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key TEXT NOT NULL UNIQUE,
+    action TEXT NOT NULL,
+    identifier TEXT NOT NULL,
+    ip_address TEXT,
+    attempts INT NOT NULL DEFAULT 1,
+    window_start TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    window_expires_at TIMESTAMPTZ NOT NULL,
+    locked_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_key ON public.auth_rate_limits(key);
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_expires ON public.auth_rate_limits(window_expires_at);
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_locked ON public.auth_rate_limits(locked_until);
+
+-- Security Audit Logs Table (Append-Only)
+CREATE TABLE IF NOT EXISTS public.security_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id UUID REFERENCES public.schools(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    masked_identifier TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    status TEXT NOT NULL CHECK (status IN ('SUCCESS', 'FAILURE', 'BLOCKED', 'FLAGGED')),
+    severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'danger', 'critical')),
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_security_logs_created_at ON public.security_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_logs_event_type ON public.security_logs(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_logs_school ON public.security_logs(school_id);
+CREATE INDEX IF NOT EXISTS idx_security_logs_status ON public.security_logs(status);
+
+-- Concurrency-Safe Rate Limit Checker & Incrementer
+CREATE OR REPLACE FUNCTION public.fn_check_and_increment_rate_limit(
+    p_key TEXT,
+    p_action TEXT,
+    p_identifier TEXT,
+    p_ip TEXT,
+    p_max_attempts INT,
+    p_window_seconds INT,
+    p_lockout_seconds INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_now TIMESTAMPTZ := timezone('utc'::text, now());
+    v_record public.auth_rate_limits%ROWTYPE;
+    v_is_locked BOOLEAN := false;
+    v_lockout_rem INT := 0;
+    v_reset_rem INT := 0;
+    v_allowed BOOLEAN := true;
+    v_require_captcha BOOLEAN := false;
+BEGIN
+    SELECT * INTO v_record
+    FROM public.auth_rate_limits
+    WHERE key = p_key
+    FOR UPDATE;
+
+    IF FOUND THEN
+        IF v_record.locked_until IS NOT NULL AND v_record.locked_until > v_now THEN
+            v_is_locked := true;
+            v_allowed := false;
+            v_lockout_rem := GREATEST(0, EXTRACT(EPOCH FROM (v_record.locked_until - v_now))::INT);
+            RETURN jsonb_build_object(
+                'allowed', false,
+                'attempts', v_record.attempts,
+                'remaining', 0,
+                'isLockedOut', true,
+                'lockoutRemainingSeconds', v_lockout_rem,
+                'resetInSeconds', v_lockout_rem,
+                'requireCaptcha', true,
+                'reason', 'Account or IP temporarily locked due to repeated failed attempts'
+            );
+        END IF;
+
+        IF v_record.window_expires_at <= v_now THEN
+            UPDATE public.auth_rate_limits
+            SET attempts = 1,
+                window_start = v_now,
+                window_expires_at = v_now + (p_window_seconds || ' seconds')::INTERVAL,
+                locked_until = NULL,
+                updated_at = v_now
+            WHERE key = p_key
+            RETURNING * INTO v_record;
+
+            v_reset_rem := p_window_seconds;
+            RETURN jsonb_build_object(
+                'allowed', true,
+                'attempts', 1,
+                'remaining', p_max_attempts - 1,
+                'isLockedOut', false,
+                'lockoutRemainingSeconds', 0,
+                'resetInSeconds', v_reset_rem,
+                'requireCaptcha', false
+            );
+        ELSE
+            UPDATE public.auth_rate_limits
+            SET attempts = v_record.attempts + 1,
+                updated_at = v_now
+            WHERE key = p_key
+            RETURNING * INTO v_record;
+
+            v_reset_rem := GREATEST(0, EXTRACT(EPOCH FROM (v_record.window_expires_at - v_now))::INT);
+
+            IF v_record.attempts >= p_max_attempts THEN
+                v_is_locked := true;
+                v_allowed := false;
+                v_lockout_rem := p_lockout_seconds;
+
+                UPDATE public.auth_rate_limits
+                SET locked_until = v_now + (p_lockout_seconds || ' seconds')::INTERVAL
+                WHERE key = p_key;
+
+                RETURN jsonb_build_object(
+                    'allowed', false,
+                    'attempts', v_record.attempts,
+                    'remaining', 0,
+                    'isLockedOut', true,
+                    'lockoutRemainingSeconds', v_lockout_rem,
+                    'resetInSeconds', v_lockout_rem,
+                    'requireCaptcha', true,
+                    'reason', 'Limit exceeded. Temporary lockout applied.'
+                );
+            END IF;
+
+            IF v_record.attempts >= 3 THEN
+                v_require_captcha := true;
+            END IF;
+
+            RETURN jsonb_build_object(
+                'allowed', true,
+                'attempts', v_record.attempts,
+                'remaining', GREATEST(0, p_max_attempts - v_record.attempts),
+                'isLockedOut', false,
+                'lockoutRemainingSeconds', 0,
+                'resetInSeconds', v_reset_rem,
+                'requireCaptcha', v_require_captcha
+            );
+        END IF;
+    ELSE
+        INSERT INTO public.auth_rate_limits (
+            key, action, identifier, ip_address, attempts, window_start, window_expires_at, locked_until
+        ) VALUES (
+            p_key,
+            p_action,
+            p_identifier,
+            p_ip,
+            1,
+            v_now,
+            v_now + (p_window_seconds || ' seconds')::INTERVAL,
+            NULL
+        );
+
+        RETURN jsonb_build_object(
+            'allowed', true,
+            'attempts', 1,
+            'remaining', p_max_attempts - 1,
+            'isLockedOut', false,
+            'lockoutRemainingSeconds', 0,
+            'resetInSeconds', p_window_seconds,
+            'requireCaptcha', false
+        );
+    END IF;
+END;
+$$;
+
+-- Reset Rate Limit On Successful Authentication
+CREATE OR REPLACE FUNCTION public.fn_reset_rate_limit(p_key TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    DELETE FROM public.auth_rate_limits WHERE key = p_key;
+END;
+$$;
+
+-- Row-Level Security for Security Logs
+ALTER TABLE public.security_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.auth_rate_limits ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY security_logs_owner_read ON public.security_logs FOR SELECT TO authenticated
+USING (public.current_user_school_role(school_id) = 'owner');
+
+CREATE POLICY security_logs_system_insert ON public.security_logs FOR INSERT TO authenticated
+WITH CHECK (true);

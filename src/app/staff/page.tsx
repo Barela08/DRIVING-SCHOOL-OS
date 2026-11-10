@@ -33,6 +33,8 @@ import {
 import { ReceiptModal } from '@/components/ReceiptModal';
 import { StudentDetailModal } from '@/components/owner/StudentDetailModal';
 import { QuickAddModals } from '@/components/owner/QuickAddModals';
+import { LLPendingApplicationsSection } from '@/components/licence/LLPendingApplicationsSection';
+import { LLAnalyticsView } from '@/components/licence/LLAnalyticsView';
 import { Payment, Student, LicenceStatus } from '@/types';
 
 interface StaffDashboardProps {
@@ -120,7 +122,7 @@ export default function StaffDashboardPage({ initialModule = 'dashboard' }: Staf
   return (
     <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col">
       {/* Top Banner Header */}
-      <div className="bg-[#111E32] border-b border-[#1E293B] text-white py-3 px-4 sm:px-6 flex items-center justify-between sticky top-[53px] z-30">
+      <div className="bg-[#111E32] border-b border-[#1E293B] text-white py-3 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileOpen(true)}
@@ -160,12 +162,24 @@ export default function StaffDashboardPage({ initialModule = 'dashboard' }: Staf
               <IndianRupee className="w-3.5 h-3.5" /> Record Fee
             </button>
           )}
+          <button
+            onClick={async () => {
+              if (window.confirm('Are you sure you want to sign out?')) {
+                document.cookie = 'ds_role=; path=/; max-age=0';
+                document.cookie = 'ds_auth_session=; path=/; max-age=0';
+                window.location.href = '/login';
+              }
+            }}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 text-xs font-bold transition ml-1"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
       <div className="flex-1 flex">
         {/* Fixed Desktop Sidebar */}
-        <aside className={`hidden lg:block fixed left-0 top-[102px] bottom-0 z-20 bg-[#111E32] border-r border-[#1E293B] transition-all duration-300 ${
+        <aside className={`hidden lg:block fixed left-0 top-[57px] bottom-0 z-20 bg-[#111E32] border-r border-[#1E293B] transition-all duration-300 ${
           isCollapsed ? 'w-16' : 'w-64'
         }`}>
           <div className="flex flex-col h-full py-4 px-2 space-y-1">
@@ -356,6 +370,11 @@ export default function StaffDashboardPage({ initialModule = 'dashboard' }: Staf
                   </table>
                 </div>
               </div>
+
+              {/* Learning Licence Applications Pending Section */}
+              <LLPendingApplicationsSection
+                onSelectStudent={setSelectedStudentForDetail}
+              />
             </div>
           )}
 
@@ -696,39 +715,52 @@ export default function StaffDashboardPage({ initialModule = 'dashboard' }: Staf
           )}
 
           {/* ========================================================================= */}
-          {/* 9. DRIVING LICENCE                                                        */}
+          {/* 9. DRIVING LICENCE (LL & DL) DESK                                         */}
           {/* ========================================================================= */}
           {activeModule === 'licences' && (
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-6 max-w-7xl mx-auto">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">RTO Driving Licence (LL & DL) Desk</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Update official Sarathi application references, test slots, and clearance results</p>
-              </div>
+            <div className="space-y-6 max-w-7xl mx-auto">
+              {/* Learning Licence Analytics & Filters */}
+              <LLAnalyticsView
+                onSelectStudent={setSelectedStudentForDetail}
+              />
 
-              <div className="space-y-4">
-                {licenceRecords.map(lic => (
-                  <div key={lic.id} className="p-5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3 text-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">{lic.student_name}</h4>
-                          <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{lic.student_code}</span>
+              {/* Pending LL Applications Section */}
+              <LLPendingApplicationsSection
+                onSelectStudent={setSelectedStudentForDetail}
+              />
+
+              {/* RTO Practical Test Roster */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">RTO Practical Test & Clearance Roster</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Scheduled practical tests, track slots at Alandi track, and official DL issuances</p>
+                </div>
+
+                <div className="space-y-4">
+                  {licenceRecords.map(lic => (
+                    <div key={lic.id} className="p-5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3 text-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-white">{lic.student_name}</h4>
+                            <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{lic.student_code}</span>
+                          </div>
+                          <span className="text-slate-500">{lic.licence_type} • RTO: {lic.rto_name}</span>
                         </div>
-                        <span className="text-slate-500">{lic.licence_type} • RTO: {lic.rto_name}</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                          {lic.ll_status}
+                        </span>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                        {lic.ll_status}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                      <div>LL Ref: <strong className="font-mono text-slate-800 dark:text-slate-200">{lic.ll_reference || 'MH12LL099182'}</strong></div>
-                      <div>DL Test Date: <strong className="text-purple-600 dark:text-purple-400 font-bold">{lic.test_date || '20 Nov 2026'}</strong></div>
-                      <div>Test Result: <strong className="text-slate-800 dark:text-slate-200">{lic.test_result || 'Scheduled'}</strong></div>
-                      <div>Licence Number: <strong className="font-mono text-emerald-600 font-bold">{lic.licence_number || 'Pending'}</strong></div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                        <div>LL Ref: <strong className="font-mono text-slate-800 dark:text-slate-200">{lic.ll_reference || 'MH12LL099182'}</strong></div>
+                        <div>DL Test Date: <strong className="text-purple-600 dark:text-purple-400 font-bold">{lic.test_date || '20 Nov 2026'}</strong></div>
+                        <div>Test Result: <strong className="text-slate-800 dark:text-slate-200">{lic.test_result || 'Scheduled'}</strong></div>
+                        <div>Licence Number: <strong className="font-mono text-emerald-600 font-bold">{lic.licence_number || 'Pending'}</strong></div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}

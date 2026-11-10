@@ -4,6 +4,7 @@ import StudentDashboardPage from '../page';
 export function generateStaticParams() {
   return [
     { module: 'dashboard' },
+    { module: 'calendar' },
     { module: 'certificate' },
     { module: 'profile' },
     { module: 'course' },

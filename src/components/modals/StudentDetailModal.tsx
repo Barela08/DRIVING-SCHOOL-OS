@@ -24,8 +24,11 @@ import {
   AlertTriangle,
   Clock,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  Edit3
 } from 'lucide-react';
+import { LLWorkflowModal } from '@/components/licence/LLWorkflowModal';
+import { getStudentLLProgress } from '@/lib/llTrackingEngine';
 
 interface StudentDetailModalProps {
   student: Student | null;
@@ -47,6 +50,8 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     schedules, 
     auditLogs,
     instructors,
+    llReminderSettings,
+    studentDocuments,
     updateLicenceStatus,
     addToast
   } = useDrivingSchool();
@@ -54,6 +59,8 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState<
     'overview' | 'personal' | 'course' | 'progress' | 'attendance' | 'finances' | 'licence' | 'documents' | 'schedule' | 'history'
   >('overview');
+
+  const [isLLWorkflowOpen, setIsLLWorkflowOpen] = useState(false);
 
   if (!student) return null;
 
@@ -63,6 +70,15 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   const studentLicence = licenceRecords.find(l => l.student_id === student.id);
   const studentSchedules = schedules.filter(s => s.enrollment_id === enrollment?.id);
   const studentAudits = auditLogs.filter(a => a.details.includes(student.student_code) || a.entity_id === student.id);
+
+  const llProgress = getStudentLLProgress(
+    student,
+    enrollment,
+    attendanceRecords,
+    studentLicence,
+    llReminderSettings,
+    studentDocuments
+  );
 
   const totalAgreedFee = enrollment?.agreed_fee || 0;
   const totalPaid = studentPayments
@@ -523,73 +539,150 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           {/* TAB 7: LICENCE INFORMATION */}
           {activeTab === 'licence' && (
             <div className="space-y-6">
+              {/* Learning Licence Tracking & Attendance Engine Summary */}
               <div className="bg-slate-800/40 border border-slate-800 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <FileCheck2 className="w-4 h-4 text-purple-400" /> RTO Licensing Lifecycle
-                  </h3>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    Status: {studentLicence?.ll_status || 'Documents Pending'}
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                      <FileCheck2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">
+                        Learning Licence (LL) Tracking Engine
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Class-day attendance threshold tracking & Sarathi RTO workflow
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${llProgress.statusBadge.bg} ${llProgress.statusBadge.color} border ${llProgress.statusBadge.border}`}>
+                      {llProgress.statusBadge.label}
+                    </span>
+                    <button
+                      onClick={() => setIsLLWorkflowOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Update LL Workflow</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-slate-400 block text-[11px]">Attended Class Days</span>
+                    <div className="text-lg font-black text-amber-400 font-mono mt-0.5">
+                      {llProgress.totalAttendedClassDays} <span className="text-xs text-slate-400 font-normal">/ {llReminderSettings.required_attended_days} Days</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">Distinct Present Dates</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-slate-400 block text-[11px]">Practical Sessions</span>
+                    <div className="text-lg font-black text-blue-400 font-mono mt-0.5">
+                      {llProgress.completedPracticalSessions} <span className="text-xs text-slate-400 font-normal">/ {enrollment?.total_sessions || 20}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">Completed On-Road</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-slate-400 block text-[11px]">First Attended Date</span>
+                    <div className="text-sm font-bold text-white font-mono mt-1">
+                      {llProgress.firstAttendedClassDate || 'Not started'}
+                    </div>
+                    <span className="text-[10px] text-slate-500">First Present Stamp</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-slate-400 block text-[11px]">Most Recent Class</span>
+                    <div className="text-sm font-bold text-white font-mono mt-1">
+                      {llProgress.mostRecentAttendedClassDate || 'None yet'}
+                    </div>
+                    <span className="text-[10px] text-slate-500">Last Verified Class</span>
+                  </div>
+                </div>
+
+                {/* LL Registration & Sarathi Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800 text-xs">
                   <div>
-                    <span className="text-slate-400 block mb-1">Licence Category:</span>
-                    <span className="font-bold text-white">{studentLicence?.licence_type || 'LMV'}</span>
+                    <span className="text-slate-400 block mb-0.5">Existing LL at Admission:</span>
+                    <strong className={llProgress.hasExistingLL ? 'text-emerald-400' : 'text-slate-200'}>
+                      {llProgress.hasExistingLL ? 'Yes (Already Available)' : 'No (Tracking Started)'}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Learning Licence Number:</span>
+                    <span className="font-mono font-bold text-white">
+                      {llProgress.llNumber || studentLicence?.ll_reference || 'Not Issued Yet'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Application Number:</span>
+                    <span className="font-mono font-bold text-blue-400">
+                      {llProgress.applicationNumber || 'Pending Filing'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">LL Expiry Date:</span>
+                    <span className={llProgress.isLLExpired ? 'text-rose-400 font-bold' : 'text-white'}>
+                      {llProgress.llExpiryDate || 'N/A'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Vehicle Category:</span>
+                    <span className="font-bold text-white">
+                      {llProgress.llVehicleCategory || studentLicence?.licence_type || 'LMV'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">LL Document Uploaded:</span>
+                    <span className={llProgress.documentUploaded ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                      {llProgress.documentUploaded ? `✓ ${llProgress.documentName || 'Document on File'}` : 'Not Uploaded'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Government Portal Link & Statutory Disclaimer */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-amber-400 block">Official Parivahan Sarathi Portal:</span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Attending driving classes is school training; official LL issuance is governed by RTO statutory rules.
+                    </p>
+                  </div>
+                  <a
+                    href="https://sarathi.parivahan.gov.in/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition"
+                  >
+                    <span>sarathi.parivahan.gov.in</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                {/* DL Test Stage Details */}
+                <div className="pt-2 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">DL Test Date:</span>
+                    <span className="font-bold text-purple-400">{studentLicence?.test_date || 'Awaiting Practical Slot'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-1">RTO Office:</span>
-                    <span className="font-bold text-white">{studentLicence?.rto_name || 'MH-12 Pune'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-1">Learner Licence (LL) Ref:</span>
-                    <span className="font-mono font-bold text-blue-400">{studentLicence?.ll_reference || 'MH12/LL/PENDING'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-1">DL Practical Test Date:</span>
-                    <span className="font-semibold text-amber-400">{studentLicence?.test_date || 'Awaiting slot'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-1">Test Result:</span>
+                    <span className="text-slate-400 block mb-0.5">Test Result:</span>
                     <span className="font-bold text-white">{studentLicence?.test_result || 'Pending'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-1">Permanent DL Number:</span>
-                    <span className="font-mono font-bold text-emerald-400">{studentLicence?.licence_number || 'Awaiting Test'}</span>
+                    <span className="text-slate-400 block mb-0.5">Permanent DL Number:</span>
+                    <span className="font-mono font-bold text-emerald-400">{studentLicence?.licence_number || 'Awaiting Clearance'}</span>
                   </div>
-                </div>
-
-                {/* Quick Status Update Buttons for Owner */}
-                <div className="border-t border-slate-800 pt-4 flex flex-wrap gap-2 text-xs">
-                  <span className="text-slate-400 self-center mr-2">Owner Quick Action:</span>
-                  <button
-                    onClick={async () => {
-                      await updateLicenceStatus(student.id, 'LL Approved', undefined, 'LL test cleared');
-                      addToast('Updated status to LL Approved', 'success');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30 font-medium transition"
-                  >
-                    Mark LL Approved
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await updateLicenceStatus(student.id, 'DL Test Scheduled', '2026-11-25', 'Test scheduled at Alandi Track');
-                      addToast('Scheduled DL Test for 25-Nov-2026', 'success');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30 font-medium transition"
-                  >
-                    Schedule DL Test
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await updateLicenceStatus(student.id, 'Test Passed', undefined, 'Cleared RTO ground test on 1st attempt', 'MH-12-2026-009841');
-                      addToast('Marked RTO Test Passed! DL issued.', 'success');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 font-medium transition"
-                  >
-                    Mark Test Passed & Issued
-                  </button>
                 </div>
               </div>
             </div>
@@ -709,6 +802,14 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Learning Licence Application Workflow Modal */}
+      <LLWorkflowModal
+        isOpen={isLLWorkflowOpen}
+        onClose={() => setIsLLWorkflowOpen(false)}
+        student={student}
+        licenceRecord={studentLicence}
+      />
     </div>
   );
 };

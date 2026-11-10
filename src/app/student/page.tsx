@@ -6,6 +6,7 @@ import { Payment } from '@/types';
 import { ReceiptModal } from '@/components/ReceiptModal';
 import { MyCertificateCard } from '@/components/student/MyCertificateCard';
 import { CertificatePreviewModal } from '@/components/modals/CertificatePreviewModal';
+import { StudentCourseCalendar } from '@/components/student/StudentCourseCalendar';
 
 import { StudentSidebar, StudentNavTab } from '@/components/student/StudentSidebar';
 import { StudentHeader } from '@/components/student/StudentHeader';
@@ -34,6 +35,7 @@ const normalizeTab = (module?: string): StudentNavTab => {
   if (clean === 'payments') return 'fees';
   if (
     clean === 'dashboard' ||
+    clean === 'calendar' ||
     clean === 'certificate' ||
     clean === 'profile' ||
     clean === 'course' ||
@@ -55,6 +57,7 @@ const normalizeTab = (module?: string): StudentNavTab => {
 export default function StudentDashboardPage({ initialModule = 'dashboard' }: StudentDashboardPageProps) {
   const {
     school,
+    role,
     students,
     enrollments,
     courses,
@@ -242,32 +245,34 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-slate-500">Switch Test Learner:</span>
-                {students.map(s => {
-                  let badge = '';
-                  if (s.id === 'stud-amit-03') badge = '🎓';
-                  else if (s.id === 'stud-kartik-07') badge = '🔔 LL Alert';
-                  else if (s.id === 'stud-ananya-06') badge = '✅ Has LL';
-                  else if (s.id === 'stud-sneha-08') badge = '⏳ 8 Days';
-                  else if (s.id === 'stud-farhan-09') badge = '⚠️ Expired LL';
+              {role !== 'student' && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-slate-500">Staff Preview Switcher:</span>
+                  {students.map(s => {
+                    let badge = '';
+                    if (s.id === 'stud-amit-03') badge = '🎓';
+                    else if (s.id === 'stud-kartik-07') badge = '🔔 LL Alert';
+                    else if (s.id === 'stud-ananya-06') badge = '✅ Has LL';
+                    else if (s.id === 'stud-sneha-08') badge = '⏳ 8 Days';
+                    else if (s.id === 'stud-farhan-09') badge = '⚠️ Expired LL';
 
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setActiveStudentId(s.id)}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition flex items-center gap-1 ${
-                        activeStudentId === s.id
-                          ? 'bg-blue-600 text-white font-bold shadow-sm'
-                          : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <span>{s.full_name.split(' ')[0]}</span>
-                      {badge && <span className="text-[10px] opacity-90">{badge}</span>}
-                    </button>
-                  );
-                })}
-              </div>
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveStudentId(s.id)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition flex items-center gap-1 ${
+                          activeStudentId === s.id
+                            ? 'bg-blue-600 text-white font-bold shadow-sm'
+                            : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <span>{s.full_name.split(' ')[0]}</span>
+                        {badge && <span className="text-[10px] opacity-90">{badge}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {activeTab === 'dashboard' && (
@@ -288,6 +293,18 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
                 onDownloadCertificate={handleDownloadClick}
                 onSimulateCompletion={handleSimulateCompletion}
                 isSimulating={isSimulating}
+              />
+            )}
+
+            {activeTab === 'calendar' && (
+              <StudentCourseCalendar
+                enrollment={currentEnrollment}
+                course={currentCourse}
+                attendance={studentAttendance}
+                schedules={studentSchedules}
+                instructor={assignedInstructor}
+                vehicle={assignedVehicle}
+                school={school}
               />
             )}
 
@@ -317,6 +334,8 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
                 enrollment={currentEnrollment}
                 instructor={assignedInstructor}
                 vehicle={assignedVehicle}
+                attendance={studentAttendance}
+                schedules={studentSchedules}
               />
             )}
 
