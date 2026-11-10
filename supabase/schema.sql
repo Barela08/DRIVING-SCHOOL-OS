@@ -805,3 +805,122 @@ USING (
         WHERE s.user_id = auth.uid()
     )
 );
+
+-- Student Self Profile Update (Restricted permitted contact fields only)
+CREATE POLICY students_self_update ON public.students FOR UPDATE TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+-- Course Enrollments: Student read-only isolation
+CREATE POLICY enrollments_owner_staff ON public.enrollments FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY enrollments_student_read ON public.enrollments FOR SELECT TO authenticated
+USING (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+-- Enrollment Session Allocations: Student read-only isolation
+CREATE POLICY allocations_owner_staff ON public.enrollment_session_allocations FOR ALL TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.enrollments e 
+        WHERE e.id = enrollment_session_allocations.enrollment_id 
+        AND public.current_user_school_role(e.school_id) IN ('owner', 'staff')
+    )
+);
+
+CREATE POLICY allocations_student_read ON public.enrollment_session_allocations FOR SELECT TO authenticated
+USING (
+    enrollment_id IN (
+        SELECT e.id FROM public.enrollments e
+        JOIN public.students s ON s.id = e.student_id
+        WHERE s.user_id = auth.uid()
+    )
+);
+
+-- Class Schedules: Student read-only isolation
+CREATE POLICY schedules_owner_staff ON public.class_schedules FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY schedules_instructor ON public.class_schedules FOR ALL TO authenticated
+USING (
+    public.current_user_school_role(school_id) = 'instructor'
+    AND instructor_id IN (SELECT id FROM public.instructors WHERE user_id = auth.uid())
+);
+
+CREATE POLICY schedules_student_read ON public.class_schedules FOR SELECT TO authenticated
+USING (
+    enrollment_id IN (
+        SELECT e.id FROM public.enrollments e
+        JOIN public.students s ON s.id = e.student_id
+        WHERE s.user_id = auth.uid()
+    )
+);
+
+-- Driving Licence Records & Events: Student read-only isolation
+CREATE POLICY licence_owner_staff ON public.licence_records FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY licence_student_read ON public.licence_records FOR SELECT TO authenticated
+USING (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+CREATE POLICY licence_events_student_read ON public.licence_events FOR SELECT TO authenticated
+USING (
+    licence_record_id IN (
+        SELECT lr.id FROM public.licence_records lr
+        JOIN public.students s ON s.id = lr.student_id
+        WHERE s.user_id = auth.uid()
+    )
+);
+
+-- Student Documents: Private storage & table isolation
+CREATE POLICY student_docs_owner_staff ON public.student_documents FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY student_docs_student_read ON public.student_documents FOR SELECT TO authenticated
+USING (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+CREATE POLICY student_docs_student_insert ON public.student_documents FOR INSERT TO authenticated
+WITH CHECK (
+    student_id IN (SELECT id FROM public.students WHERE user_id = auth.uid())
+);
+
+-- Payment Receipts: Student read-only isolation
+CREATE POLICY receipts_owner_staff ON public.payment_receipts FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY receipts_student_read ON public.payment_receipts FOR SELECT TO authenticated
+USING (
+    payment_id IN (
+        SELECT p.id FROM public.payments p
+        JOIN public.enrollments e ON e.id = p.enrollment_id
+        JOIN public.students s ON s.id = e.student_id
+        WHERE s.user_id = auth.uid()
+    )
+);
+
+-- Notifications: Strict recipient isolation
+CREATE POLICY notifications_owner_staff ON public.notifications FOR ALL TO authenticated
+USING (public.current_user_school_role(school_id) IN ('owner', 'staff'));
+
+CREATE POLICY notifications_user_read ON public.notifications FOR SELECT TO authenticated
+USING (user_id = auth.uid());
+
+CREATE POLICY notifications_user_update ON public.notifications FOR UPDATE TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+-- Private Supabase Storage Bucket Security for 'student-documents'
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('student-documents', 'student-documents', false);
+-- Policy: Students may only read/upload inside their own student_id folder:
+-- CREATE POLICY "Student Documents Storage Access" ON storage.objects
+--   FOR SELECT TO authenticated
+--   USING (bucket_id = 'student-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+-- CREATE POLICY "Student Documents Storage Upload" ON storage.objects
+--   FOR INSERT TO authenticated
+--   WITH CHECK (bucket_id = 'student-documents' AND (storage.foldername(name))[1] = auth.uid()::text);

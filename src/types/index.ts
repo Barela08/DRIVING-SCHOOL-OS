@@ -21,6 +21,8 @@ export interface School {
   rto_registration_no?: string;
   timezone: string;
   currency: string;
+  google_review_url?: string;
+  auto_issue_certificates?: boolean;
   created_at: string;
 }
 
@@ -73,6 +75,8 @@ export interface Student {
   assigned_instructor_name?: string;
   enrolled_course_id?: string;
   enrolled_course_name?: string;
+  has_existing_ll?: boolean;
+  ll_number?: string;
   created_at: string;
 }
 
@@ -193,9 +197,17 @@ export interface PaymentReceipt {
 }
 
 export type LicenceStatus = 
+  | 'Not Applied'
+  | 'Already Available'
+  | 'Reminder Sent'
+  | 'Application Started'
+  | 'Application Submitted'
+  | 'Test Scheduled'
+  | 'Approved'
+  | 'Rejected'
+  | 'Document Uploaded'
   | 'Not Started'
   | 'Documents Pending'
-  | 'Application Submitted'
   | 'LL Test Scheduled'
   | 'LL Approved'
   | 'DL Application Submitted'
@@ -210,7 +222,8 @@ export interface LicenceRecord {
   student_id: string;
   student_name: string;
   student_code: string;
-  licence_type: string; // 'MCWG + LMV'
+  licence_type: string; // e.g. 'LMV' | 'MCWG' | 'MCWG + LMV' | 'Commercial'
+  has_existing_ll?: boolean;
   ll_application_date?: string;
   ll_reference?: string;
   ll_status: LicenceStatus;
@@ -223,8 +236,75 @@ export interface LicenceRecord {
   test_result?: 'Pending' | 'Passed' | 'Failed';
   licence_number?: string;
   issue_date?: string;
+  approval_date?: string;
+  application_number?: string;
+  ll_document_url?: string;
+  ll_document_name?: string;
+  ll_document_verified?: boolean;
+  reminder_eligible?: boolean;
+  reminder_count?: number;
+  last_reminder_sent_date?: string;
+  last_status_updated_by?: string;
+  last_status_updated_at?: string;
   next_action_date?: string;
   remarks?: string;
+}
+
+export interface LLReminderSettings {
+  enabled: boolean;
+  required_attended_days: number;
+  min_completed_sessions: number;
+  frequency: 'once' | 'every_3_days' | 'every_7_days' | 'every_14_days';
+  notify_owner: boolean;
+  notify_student: boolean;
+  approaching_threshold_days: number;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface StudentLLProgress {
+  studentId: string;
+  studentCode: string;
+  studentName: string;
+  mobileNumber: string;
+  instructorName: string;
+  courseName: string;
+  admissionDate: string;
+  totalAttendedClassDays: number;
+  completedPracticalSessions: number;
+  totalAllocatedSessions: number;
+  firstAttendedClassDate?: string;
+  mostRecentAttendedClassDate?: string;
+  courseProgressPercent: number;
+  hasExistingLL: boolean;
+  llStatus: LicenceStatus;
+  llNumber?: string;
+  llIssueDate?: string;
+  llExpiryDate?: string;
+  llVehicleCategory?: string;
+  applicationNumber?: string;
+  applicationDate?: string;
+  testDate?: string;
+  approvalDate?: string;
+  documentUploaded: boolean;
+  documentVerified: boolean;
+  documentUrl?: string;
+  documentName?: string;
+  isEligibleForReminder: boolean;
+  isApproachingThreshold: boolean;
+  daysToThreshold: number;
+  reminderSentDate?: string;
+  reminderCount: number;
+  canSendReminder: boolean;
+  isLLValid: boolean;
+  isLLExpired: boolean;
+  isLLExpiringSoon: boolean;
+  statusBadge: {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+  };
 }
 
 export interface Vehicle {
@@ -363,3 +443,90 @@ export interface SupportTicket {
   status: 'Open' | 'In_Progress' | 'Resolved';
   created_at: string;
 }
+
+export interface CertificateFieldPosition {
+  x: number; // pt or %
+  y: number; // pt or %
+  fontSize?: number;
+  fontFamily?: 'Helvetica' | 'Helvetica-Bold' | 'Times-Roman' | 'Times-Bold' | 'Courier';
+  fontWeight?: 'normal' | 'bold';
+  color?: string; // hex e.g. '#0f172a'
+  alignment?: 'center' | 'left' | 'right';
+  maxWidth?: number;
+}
+
+export interface CertificateTemplateFieldsConfig {
+  student_name: CertificateFieldPosition;
+  student_code: CertificateFieldPosition;
+  course_name: CertificateFieldPosition;
+  completion_date: CertificateFieldPosition;
+  certificate_number: CertificateFieldPosition;
+  school_name: CertificateFieldPosition;
+  instructor_name: CertificateFieldPosition;
+  qr_code: { x: number; y: number; size: number };
+}
+
+export interface CertificateTemplate {
+  id: string;
+  school_id: string;
+  name: string;
+  template_data_url: string; // Base64 or image/pdf URL
+  mime_type: string; // 'image/png' | 'image/jpeg' | 'application/pdf'
+  width: number;
+  height: number;
+  is_active: boolean;
+  fields_config: CertificateTemplateFieldsConfig;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseCertificate {
+  id: string;
+  school_id: string;
+  enrollment_id: string;
+  student_id: string;
+  student_code: string;
+  student_name: string;
+  course_id: string;
+  course_name: string;
+  instructor_id?: string;
+  instructor_name?: string;
+  certificate_number: string; // e.g. APEX-CRT-2026-00101
+  completion_date: string; // Calculated from actual verified attendance records
+  issued_at: string;
+  status: 'Issued' | 'Revoked' | 'Draft';
+  pdf_data_url?: string;
+  storage_path?: string;
+  qr_verification_url: string;
+  download_count: number;
+  last_downloaded_at?: string;
+  template_id: string;
+  verified_sessions_count: number;
+  total_required_sessions: number;
+  qr_hash: string;
+  created_at: string;
+}
+
+export interface CertificateFeedback {
+  id: string;
+  certificate_id: string;
+  student_id: string;
+  student_name: string;
+  overall_rating: number; // 1-5
+  instructor_rating: number; // 1-5
+  training_quality_rating: number; // 1-5
+  written_feedback?: string;
+  suggestions?: string;
+  google_review_clicked: boolean;
+  created_at: string;
+}
+
+export interface CertificateDownloadLog {
+  id: string;
+  certificate_id: string;
+  student_id: string;
+  student_name: string;
+  downloaded_at: string;
+  ip_address?: string;
+}
+

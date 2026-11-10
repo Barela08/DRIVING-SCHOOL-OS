@@ -14,276 +14,286 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
-  Lock
+  Lock,
+  Sparkles,
+  Award
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchRole } = useDrivingSchool();
-  const [activeTab, setActiveTab] = useState<'admin' | 'instructor' | 'student'>('instructor');
+  const { switchRole, addToast } = useDrivingSchool();
+  const [activeRole, setActiveRole] = useState<UserRole>('instructor');
   
   // Form states
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('owner@apexdriving.in');
+  const [ownerPassword, setOwnerPassword] = useState('••••••••');
+  
+  const [staffEmail, setStaffEmail] = useState('staff@apexdriving.in');
+  const [staffPassword, setStaffPassword] = useState('••••••••');
+
   const [instructorCode, setInstructorCode] = useState('INS-2026-01');
-  const [pin, setPin] = useState('1234');
+  const [instructorPin, setInstructorPin] = useState('1234');
+
   const [studentCode, setStudentCode] = useState('DS-2026-00101');
-  const [studentPass, setStudentPass] = useState('pass123');
-  const [error, setError] = useState('');
+  const [studentPassword, setStudentPassword] = useState('pass123');
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     setTimeout(() => {
       setLoading(false);
-      switchRole('owner');
-      router.push('/owner');
+      switchRole(activeRole);
+      addToast(`Logged in as ${activeRole.toUpperCase()}`, 'success');
+      router.push(`/${activeRole}/dashboard`);
     }, 400);
   };
 
-  const handleInstructorLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setTimeout(() => {
-      setLoading(false);
-      if (instructorCode.toUpperCase().startsWith('INS')) {
-        switchRole('instructor');
-        router.push('/instructor');
-      } else {
-        setError('Please enter a valid Instructor ID (e.g. INS-2026-01)');
-      }
-    }, 400);
-  };
-
-  const handleStudentLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setTimeout(() => {
-      setLoading(false);
-      if (studentCode.toUpperCase().startsWith('DS')) {
-        switchRole('student');
-        router.push('/student');
-      } else {
-        setError('Please enter a valid Student ID (e.g. DS-2026-00101)');
-      }
-    }, 400);
-  };
-
-  const quickDemoLogin = (role: UserRole, path: string) => {
+  const handleQuickDemo = (role: UserRole) => {
     switchRole(role);
-    router.push(path);
+    addToast(`Quick switch to ${role.toUpperCase()} portal`, 'info');
+    router.push(`/${role}/dashboard`);
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] flex items-center justify-center p-4 sm:p-6 text-slate-900 dark:text-slate-100">
       <div className="max-w-md w-full space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 items-center justify-center shadow-lg shadow-amber-500/20 mb-1">
-            <Car className="w-7 h-7 stroke-[2.5]" />
+          <div className="inline-flex w-14 h-14 rounded-2xl bg-[#14243A] border border-[#1E293B] text-blue-500 items-center justify-center shadow-lg shadow-blue-600/10 mb-1">
+            <Car className="w-8 h-8 stroke-[2.2]" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Sign In to Driving School OS</h1>
-          <p className="text-xs text-slate-400">Select your role to access your personalized portal</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Sign In to Driving School OS
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Unified authentication portal for Owner, Staff, Instructors & Students
+          </p>
         </div>
 
-        {/* Auth Role Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs">
-          <button
-            onClick={() => { setActiveTab('instructor'); setError(''); }}
-            className={`py-2 px-2 rounded-lg font-medium transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'instructor'
-                ? 'bg-emerald-600 text-white font-bold shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Car className="w-3.5 h-3.5" /> Instructor
-          </button>
-          <button
-            onClick={() => { setActiveTab('student'); setError(''); }}
-            className={`py-2 px-2 rounded-lg font-medium transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'student'
-                ? 'bg-amber-600 text-slate-950 font-bold shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5" /> Student
-          </button>
-          <button
-            onClick={() => { setActiveTab('admin'); setError(''); }}
-            className={`py-2 px-2 rounded-lg font-medium transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'admin'
-                ? 'bg-purple-600 text-white font-bold shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" /> Owner / Staff
-          </button>
+        {/* 4-Role Tabs */}
+        <div className="grid grid-cols-4 gap-1 bg-white dark:bg-[#111E32] p-1.5 rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm text-xs font-semibold">
+          {[
+            { id: 'owner', label: 'Owner', icon: ShieldCheck },
+            { id: 'staff', label: 'Staff', icon: Users },
+            { id: 'instructor', label: 'Instructor', icon: Award },
+            { id: 'student', label: 'Student', icon: GraduationCap }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeRole === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => { setActiveRole(tab.id as UserRole); setError(''); }}
+                className={`py-2 px-1 rounded-xl transition flex flex-col items-center gap-1 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-[11px]">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+        {/* Auth Form Card */}
+        <div className="p-7 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-xl space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E5EAF1] dark:border-[#1E293B]">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
+                {activeRole} ACCESS
+              </span>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                {activeRole === 'owner' && 'Owner Administrator Login'}
+                {activeRole === 'staff' && 'Counter & Admissions Staff Login'}
+                {activeRole === 'instructor' && 'Instructor ID & PIN Login'}
+                {activeRole === 'student' && 'Student ID & Password Login'}
+              </h2>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              Supabase RLS
+            </span>
           </div>
-        )}
 
-        {/* Form Container */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
-          {/* TAB 1: INSTRUCTOR LOGIN */}
-          {activeTab === 'instructor' && (
-            <form onSubmit={handleInstructorLogin} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Instructor ID / Code</label>
-                <div className="relative">
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4 text-xs">
+            {/* Owner Fields */}
+            {activeRole === 'owner' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Registered Owner Email / Phone</label>
+                  <input
+                    type="email"
+                    required
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 font-medium"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Password / OTP</label>
+                  <input
+                    type="password"
+                    required
+                    value={ownerPassword}
+                    onChange={(e) => setOwnerPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Staff Fields */}
+            {activeRole === 'staff' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Staff ID / Email</label>
+                  <input
+                    type="text"
+                    required
+                    value={staffEmail}
+                    onChange={(e) => setStaffEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 font-medium"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={staffPassword}
+                    onChange={(e) => setStaffPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Instructor Fields */}
+            {activeRole === 'instructor' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Instructor ID or Mobile</label>
                   <input
                     type="text"
                     required
                     value={instructorCode}
                     onChange={(e) => setInstructorCode(e.target.value)}
                     placeholder="e.g. INS-2026-01"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono uppercase"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-600"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">Instructor code allocated by management</p>
-              </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">4-Digit Security PIN</label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    required
+                    value={instructorPin}
+                    onChange={(e) => setInstructorPin(e.target.value)}
+                    placeholder="e.g. 1234"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">4-Digit Security PIN</label>
-                <input
-                  type="password"
-                  required
-                  maxLength={4}
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 tracking-widest text-center text-lg"
-                />
-              </div>
+            {/* Student Fields */}
+            {activeRole === 'student' && (
+              <>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Student ID or Mobile Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={studentCode}
+                    onChange={(e) => setStudentCode(e.target.value)}
+                    placeholder="e.g. DS-2026-00101"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Password / OTP</label>
+                  <input
+                    type="password"
+                    required
+                    value={studentPassword}
+                    onChange={(e) => setStudentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
 
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition disabled:opacity-50"
+            >
+              {loading ? (
+                <span>Authenticating with Supabase...</span>
+              ) : (
+                <>
+                  <KeyRound className="w-3.5 h-3.5" /> Sign In as {activeRole.toUpperCase()}
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* 1-Tap Quick Demo Switching Bar */}
+          <div className="pt-4 border-t border-[#E5EAF1] dark:border-[#1E293B] space-y-2">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block text-center">
+              1-Tap Instant Demo Access (No password required):
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+                type="button"
+                onClick={() => handleQuickDemo('owner')}
+                className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                {loading ? 'Authenticating...' : 'Sign In as Instructor'} <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          {/* TAB 2: STUDENT LOGIN */}
-          {activeTab === 'student' && (
-            <form onSubmit={handleStudentLogin} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Student Unique Code</label>
-                <input
-                  type="text"
-                  required
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
-                  placeholder="e.g. DS-2026-00101"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono uppercase"
-                />
-                <p className="text-[11px] text-slate-500">Found on your admission receipt or SMS</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Password / Mobile OTP</label>
-                <input
-                  type="password"
-                  required
-                  value={studentPass}
-                  onChange={(e) => setStudentPass(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
-              >
-                {loading ? 'Logging in...' : 'Sign In to Student Portal'} <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          {/* TAB 3: OWNER & STAFF LOGIN */}
-          {activeTab === 'admin' && (
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Registered Email / Mobile</label>
-                <input
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="owner@apexdriving.in"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Secure Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2"
-              >
-                {loading ? 'Verifying...' : 'Sign In to Administrative Console'} <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          {/* 1-Tap Quick Demo Credentials */}
-          <div className="pt-4 border-t border-slate-800">
-            <span className="text-[11px] font-semibold text-slate-400 block mb-2">⚡ 1-Tap Quick Demo Access:</span>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                onClick={() => quickDemoLogin('owner', '/owner')}
-                className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-purple-300 transition"
-              >
-                👑 <strong>Owner</strong>
-                <span className="block text-[10px] text-slate-500">Rajesh Mehta</span>
+                <span className="font-bold text-slate-900 dark:text-white block">👑 Owner</span>
+                <span className="text-[10px] text-slate-400">Rajesh Mehta</span>
               </button>
 
               <button
-                onClick={() => quickDemoLogin('staff', '/staff')}
-                className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-blue-300 transition"
+                type="button"
+                onClick={() => handleQuickDemo('staff')}
+                className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                📋 <strong>Staff</strong>
-                <span className="block text-[10px] text-slate-500">Sunita Patil</span>
+                <span className="font-bold text-slate-900 dark:text-white block">📋 Staff</span>
+                <span className="text-[10px] text-slate-400">Sunita Patil</span>
               </button>
 
               <button
-                onClick={() => quickDemoLogin('instructor', '/instructor')}
-                className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-emerald-300 transition"
+                type="button"
+                onClick={() => handleQuickDemo('instructor')}
+                className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                🚘 <strong>Instructor</strong>
-                <span className="block text-[10px] text-slate-500">INS-2026-01 (Vikram)</span>
+                <span className="font-bold text-slate-900 dark:text-white block">🚘 Instructor</span>
+                <span className="text-[10px] text-slate-400">Vikram Shinde</span>
               </button>
 
               <button
-                onClick={() => quickDemoLogin('student', '/student')}
-                className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-amber-300 transition"
+                type="button"
+                onClick={() => handleQuickDemo('student')}
+                className="p-2 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-[#E5EAF1] dark:border-[#1E293B] text-left transition"
               >
-                🎓 <strong>Student</strong>
-                <span className="block text-[10px] text-slate-500">DS-2026-00101 (Rahul)</span>
+                <span className="font-bold text-slate-900 dark:text-white block">🎓 Student</span>
+                <span className="text-[10px] text-slate-400">Rahul Sharma</span>
               </button>
             </div>
           </div>

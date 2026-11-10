@@ -11,8 +11,26 @@ import {
   PaymentReceipt, 
   LicenceRecord, 
   ClassSchedule, 
-  AuditLog 
+  AuditLog,
+  LLReminderSettings,
+  CourseCertificate,
+  CertificateTemplate,
+  CertificateFeedback,
+  CertificateDownloadLog
 } from '@/types';
+import { DEFAULT_CERTIFICATE_TEMPLATE } from '@/lib/defaultTemplate';
+
+export const mockLLReminderSettings: LLReminderSettings = {
+  enabled: true,
+  required_attended_days: 10,
+  min_completed_sessions: 10,
+  frequency: 'every_7_days',
+  notify_owner: true,
+  notify_student: true,
+  approaching_threshold_days: 2,
+  updated_at: '2026-11-01T10:00:00Z',
+  updated_by: 'Owner Admin'
+};
 
 export const mockSchool: School = {
   id: 'school-apex-001',
@@ -31,6 +49,8 @@ export const mockSchool: School = {
   rto_registration_no: 'MH-12/MDS/2018/042',
   timezone: 'Asia/Kolkata',
   currency: 'INR',
+  google_review_url: 'https://g.page/r/apex-driving-school/review',
+  auto_issue_certificates: true,
   created_at: '2024-01-01T00:00:00Z'
 };
 
@@ -274,7 +294,7 @@ export const mockStudents: Student[] = [
       pincode: '411005'
     },
     admission_date: '2026-09-15',
-    status: 'Active',
+    status: 'Course Completed',
     assigned_instructor_id: 'ins-suresh-02',
     assigned_instructor_name: 'Suresh Patil',
     enrolled_course_id: 'course-combo-executive',
@@ -314,7 +334,106 @@ export const mockStudents: Student[] = [
     status: 'Registered',
     enrolled_course_id: 'course-4w-complete',
     enrolled_course_name: 'Four Wheeler Complete Mastery Course',
+    has_existing_ll: false,
     created_at: '2026-11-08T10:00:00Z'
+  },
+  {
+    id: 'stud-ananya-06',
+    school_id: 'school-apex-001',
+    student_code: 'DS-2026-00106',
+    full_name: 'Ananya Patel',
+    phone: '+91 98900 66778',
+    email: 'ananya.patel@gmail.com',
+    date_of_birth: '2002-12-04',
+    gender: 'Female',
+    blood_group: 'B+',
+    address: {
+      area: 'Baner Road',
+      city: 'Pune',
+      pincode: '411045'
+    },
+    admission_date: '2026-10-10',
+    status: 'Active',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    enrolled_course_id: 'course-4w-complete',
+    enrolled_course_name: 'Four Wheeler Complete Mastery Course',
+    has_existing_ll: true,
+    ll_number: 'MH14/LL/2026/0048192',
+    created_at: '2026-10-10T11:00:00Z'
+  },
+  {
+    id: 'stud-kartik-07',
+    school_id: 'school-apex-001',
+    student_code: 'DS-2026-00107',
+    full_name: 'Kartik Nair',
+    phone: '+91 98900 77889',
+    email: 'kartik.nair@outlook.com',
+    date_of_birth: '2000-04-18',
+    gender: 'Male',
+    blood_group: 'O+',
+    address: {
+      area: 'Wakad, Datta Mandir',
+      city: 'Pune',
+      pincode: '411057'
+    },
+    admission_date: '2026-10-12',
+    status: 'Active',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    enrolled_course_id: 'course-4w-complete',
+    enrolled_course_name: 'Four Wheeler Complete Mastery Course',
+    has_existing_ll: false,
+    created_at: '2026-10-12T09:30:00Z'
+  },
+  {
+    id: 'stud-sneha-08',
+    school_id: 'school-apex-001',
+    student_code: 'DS-2026-00108',
+    full_name: 'Sneha Deshpande',
+    phone: '+91 98900 88990',
+    email: 'sneha.d@gmail.com',
+    date_of_birth: '2004-09-29',
+    gender: 'Female',
+    blood_group: 'A+',
+    address: {
+      area: 'Kalyani Nagar',
+      city: 'Pune',
+      pincode: '411006'
+    },
+    admission_date: '2026-10-22',
+    status: 'Active',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    enrolled_course_id: 'course-2w-expert',
+    enrolled_course_name: 'Two Wheeler Professional Riding (10 Sessions)',
+    has_existing_ll: false,
+    created_at: '2026-10-22T14:00:00Z'
+  },
+  {
+    id: 'stud-farhan-09',
+    school_id: 'school-apex-001',
+    student_code: 'DS-2026-00109',
+    full_name: 'Farhan Shaikh',
+    phone: '+91 98900 99001',
+    email: 'farhan.shaikh@gmail.com',
+    date_of_birth: '1997-02-15',
+    gender: 'Male',
+    blood_group: 'AB-',
+    address: {
+      area: 'Camp, East Street',
+      city: 'Pune',
+      pincode: '411001'
+    },
+    admission_date: '2026-09-01',
+    status: 'Active',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    enrolled_course_id: 'course-4w-complete',
+    enrolled_course_name: 'Four Wheeler Complete Mastery Course',
+    has_existing_ll: true,
+    ll_number: 'MH12/LL/2026/0019280',
+    created_at: '2026-09-01T10:00:00Z'
   }
 ];
 
@@ -462,6 +581,105 @@ export const mockEnrollments: Enrollment[] = [
       { id: 'sa-rm1', enrollment_id: 'enr-rohit-05', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 0, sort_order: 1 },
       { id: 'sa-rm2', enrollment_id: 'enr-rohit-05', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 3, completed_count: 0, sort_order: 2 }
     ]
+  },
+  {
+    id: 'enr-ananya-06',
+    school_id: 'school-apex-001',
+    student_id: 'stud-ananya-06',
+    student_code: 'DS-2026-00106',
+    student_name: 'Ananya Patel',
+    course_id: 'course-4w-complete',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    assigned_vehicle_id: 'veh-swift-01',
+    vehicle_registration: 'MH-12-AB-1234',
+    start_date: '2026-10-10',
+    expected_end_date: '2026-11-20',
+    agreed_fee: 8500,
+    status: 'Active',
+    total_sessions: 20,
+    completed_sessions: 6,
+    session_allocations: [
+      { id: 'sa-a1', enrollment_id: 'enr-ananya-06', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 2, sort_order: 1 },
+      { id: 'sa-a2', enrollment_id: 'enr-ananya-06', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 3, completed_count: 3, sort_order: 2 },
+      { id: 'sa-a3', enrollment_id: 'enr-ananya-06', session_template_id: 't3', session_name_snapshot: 'Straight Road & Lane Discipline', allocated_count: 3, completed_count: 1, sort_order: 3 }
+    ]
+  },
+  {
+    id: 'enr-kartik-07',
+    school_id: 'school-apex-001',
+    student_id: 'stud-kartik-07',
+    student_code: 'DS-2026-00107',
+    student_name: 'Kartik Nair',
+    course_id: 'course-4w-complete',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    assigned_vehicle_id: 'veh-i10-02',
+    vehicle_registration: 'MH-12-CD-5678',
+    start_date: '2026-10-14',
+    expected_end_date: '2026-11-25',
+    agreed_fee: 8500,
+    status: 'Active',
+    total_sessions: 20,
+    completed_sessions: 11,
+    session_allocations: [
+      { id: 'sa-k1', enrollment_id: 'enr-kartik-07', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 2, sort_order: 1 },
+      { id: 'sa-k2', enrollment_id: 'enr-kartik-07', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 3, completed_count: 3, sort_order: 2 },
+      { id: 'sa-k3', enrollment_id: 'enr-kartik-07', session_template_id: 't3', session_name_snapshot: 'Straight Road & Lane Discipline', allocated_count: 3, completed_count: 3, sort_order: 3 },
+      { id: 'sa-k4', enrollment_id: 'enr-kartik-07', session_template_id: 't4', session_name_snapshot: 'Dense Traffic & Junction Negotiation', allocated_count: 3, completed_count: 3, sort_order: 4 }
+    ]
+  },
+  {
+    id: 'enr-sneha-08',
+    school_id: 'school-apex-001',
+    student_id: 'stud-sneha-08',
+    student_code: 'DS-2026-00108',
+    student_name: 'Sneha Deshpande',
+    course_id: 'course-2w-expert',
+    course_name: 'Two Wheeler Professional Riding (10 Sessions)',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    assigned_vehicle_id: 'veh-activa-03',
+    vehicle_registration: 'MH-12-EF-9012',
+    start_date: '2026-10-23',
+    expected_end_date: '2026-11-15',
+    agreed_fee: 4500,
+    status: 'Active',
+    total_sessions: 10,
+    completed_sessions: 8,
+    session_allocations: [
+      { id: 'sa-s1', enrollment_id: 'enr-sneha-08', session_template_id: 't2w-1', session_name_snapshot: 'Balancing, Braking & Throttle Control', allocated_count: 3, completed_count: 3, sort_order: 1 },
+      { id: 'sa-s2', enrollment_id: 'enr-sneha-08', session_template_id: 't2w-2', session_name_snapshot: 'Figure-8 Track Mastery', allocated_count: 3, completed_count: 3, sort_order: 2 },
+      { id: 'sa-s3', enrollment_id: 'enr-sneha-08', session_template_id: 't2w-3', session_name_snapshot: 'City Traffic Navigation & U-Turns', allocated_count: 4, completed_count: 2, sort_order: 3 }
+    ]
+  },
+  {
+    id: 'enr-farhan-09',
+    school_id: 'school-apex-001',
+    student_id: 'stud-farhan-09',
+    student_code: 'DS-2026-00109',
+    student_name: 'Farhan Shaikh',
+    course_id: 'course-4w-complete',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    assigned_vehicle_id: 'veh-swift-01',
+    vehicle_registration: 'MH-12-AB-1234',
+    start_date: '2026-09-05',
+    expected_end_date: '2026-10-15',
+    agreed_fee: 8500,
+    status: 'Active',
+    total_sessions: 20,
+    completed_sessions: 15,
+    session_allocations: [
+      { id: 'sa-f1', enrollment_id: 'enr-farhan-09', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 2, sort_order: 1 }
+    ]
   }
 ];
 
@@ -519,7 +737,140 @@ export const mockAttendanceRecords: AttendanceRecord[] = [
     marked_at: '2026-11-09T09:40:00+05:30',
     status: 'Present',
     remarks: 'Shifted smoothly from 2nd to 3rd gear.'
-  }
+  },
+  // AMIT DESHMUKH (DS-2026-00103) — 25 Fully Completed & Verified Practical Sessions (Sept 16 - Oct 30)
+  ...[
+    { date: '2026-09-17', sa: 'sa-a1', name: 'Basic Vehicle Controls & Cockpit Drill' },
+    { date: '2026-09-18', sa: 'sa-a1', name: 'Basic Vehicle Controls & Cockpit Drill' },
+    { date: '2026-09-19', sa: 'sa-a1', name: 'Basic Vehicle Controls & Cockpit Drill' },
+    { date: '2026-09-21', sa: 'sa-a2', name: 'Clutch, Gear & Steering Coordination' },
+    { date: '2026-09-22', sa: 'sa-a2', name: 'Clutch, Gear & Steering Coordination' },
+    { date: '2026-09-23', sa: 'sa-a2', name: 'Clutch, Gear & Steering Coordination' },
+    { date: '2026-09-24', sa: 'sa-a2', name: 'Clutch, Gear & Steering Coordination' },
+    { date: '2026-09-26', sa: 'sa-a3', name: 'Straight Road & Lane Discipline' },
+    { date: '2026-09-28', sa: 'sa-a3', name: 'Straight Road & Lane Discipline' },
+    { date: '2026-09-29', sa: 'sa-a3', name: 'Straight Road & Lane Discipline' },
+    { date: '2026-10-01', sa: 'sa-a3', name: 'Straight Road & Lane Discipline' },
+    { date: '2026-10-03', sa: 'sa-a4', name: 'Dense Traffic & Junction Negotiation' },
+    { date: '2026-10-05', sa: 'sa-a4', name: 'Dense Traffic & Junction Negotiation' },
+    { date: '2026-10-07', sa: 'sa-a4', name: 'Dense Traffic & Junction Negotiation' },
+    { date: '2026-10-09', sa: 'sa-a4', name: 'Dense Traffic & Junction Negotiation' },
+    { date: '2026-10-12', sa: 'sa-a5', name: 'Reverse Driving & S-Track Navigation' },
+    { date: '2026-10-14', sa: 'sa-a5', name: 'Reverse Driving & S-Track Navigation' },
+    { date: '2026-10-16', sa: 'sa-a5', name: 'Reverse Driving & S-Track Navigation' },
+    { date: '2026-10-19', sa: 'sa-a6', name: 'Perpendicular & Box Parking' },
+    { date: '2026-10-21', sa: 'sa-a6', name: 'Perpendicular & Box Parking' },
+    { date: '2026-10-23', sa: 'sa-a6', name: 'Perpendicular & Box Parking' },
+    { date: '2026-10-26', sa: 'sa-a7', name: 'Parallel Parking & Hill Starts' },
+    { date: '2026-10-27', sa: 'sa-a7', name: 'Parallel Parking & Hill Starts' },
+    { date: '2026-10-29', sa: 'sa-a8', name: 'Two-Wheeler Balance & 8-Track Test Prep' },
+    { date: '2026-10-30', sa: 'sa-a8', name: 'Two-Wheeler Balance & 8-Track Test Prep' }
+  ].map((s, idx) => ({
+    id: `att-amit-${idx + 1}`,
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-amit-03',
+    student_id: 'stud-amit-03',
+    student_code: 'DS-2026-00103',
+    student_name: 'Amit Deshmukh',
+    instructor_id: 'ins-suresh-02',
+    instructor_name: 'Suresh Patil',
+    session_allocation_id: s.sa,
+    session_name: s.name,
+    vehicle_id: 'veh-i10-02',
+    vehicle_info: 'Hyundai Grand i10 (MH-12-CD-5678)',
+    attendance_date: s.date,
+    marked_at: `${s.date}T09:30:00+05:30`,
+    status: 'Present' as const,
+    remarks: 'Session completed with full competence and verified.'
+  })),
+  // KARTIK NAIR (DS-2026-00107) — 11 Distinct Attended Days (Eligible for LL Reminder)
+  ...[
+    '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', 
+    '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05'
+  ].map((dt, idx) => ({
+    id: `att-kartik-${idx + 1}`,
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-kartik-07',
+    student_id: 'stud-kartik-07',
+    student_code: 'DS-2026-00107',
+    student_name: 'Kartik Nair',
+    instructor_id: 'ins-suresh-02',
+    instructor_name: 'Suresh Patil',
+    session_allocation_id: `sa-k${(idx % 4) + 1}`,
+    session_name: idx < 3 ? 'Basic Vehicle Controls & Cockpit Drill' : idx < 6 ? 'Clutch, Gear & Steering Coordination' : idx < 9 ? 'Straight Road & Lane Discipline' : 'Dense Traffic & Junction Negotiation',
+    vehicle_id: 'veh-i10-02',
+    vehicle_info: 'Hyundai Grand i10 (MH-12-CD-5678)',
+    attendance_date: dt,
+    marked_at: `${dt}T09:30:00+05:30`,
+    status: 'Present' as const,
+    remarks: `Session ${idx + 1} completed with high consistency.`
+  })),
+  // SNEHA DESHPANDE (DS-2026-00108) — 8 Distinct Attended Days (Approaching Threshold: 8/10)
+  ...[
+    '2026-10-26', '2026-10-28', '2026-10-30', '2026-11-01', 
+    '2026-11-03', '2026-11-04', '2026-11-06', '2026-11-07'
+  ].map((dt, idx) => ({
+    id: `att-sneha-${idx + 1}`,
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-sneha-08',
+    student_id: 'stud-sneha-08',
+    student_code: 'DS-2026-00108',
+    student_name: 'Sneha Deshpande',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    session_allocation_id: `sa-s${(idx % 3) + 1}`,
+    session_name: idx < 3 ? 'Balancing, Braking & Throttle Control' : idx < 6 ? 'Figure-8 Track Mastery' : 'City Traffic Navigation & U-Turns',
+    vehicle_id: 'veh-activa-03',
+    vehicle_info: 'Honda Activa 6G (MH-12-EF-9012)',
+    attendance_date: dt,
+    marked_at: `${dt}T16:00:00+05:30`,
+    status: 'Present' as const,
+    remarks: `2-wheeler practical session ${idx + 1} completed.`
+  })),
+  // ANANYA PATEL (DS-2026-00106) — 6 Distinct Attended Days (Already Available LL)
+  ...[
+    '2026-10-14', '2026-10-16', '2026-10-18', '2026-10-21', '2026-10-24', '2026-10-28'
+  ].map((dt, idx) => ({
+    id: `att-ananya-${idx + 1}`,
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-ananya-06',
+    student_id: 'stud-ananya-06',
+    student_code: 'DS-2026-00106',
+    student_name: 'Ananya Patel',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    session_allocation_id: `sa-a${(idx % 3) + 1}`,
+    session_name: idx < 3 ? 'Basic Controls' : 'Clutch & Gear Control',
+    vehicle_id: 'veh-swift-01',
+    vehicle_info: 'Swift Dzire (MH-12-AB-1234)',
+    attendance_date: dt,
+    marked_at: `${dt}T11:00:00+05:30`,
+    status: 'Present' as const,
+    remarks: `Practical driving practice ${idx + 1}.`
+  })),
+  // FARHAN SHAIKH (DS-2026-00109) — 15 Attended Days (Expired LL)
+  ...[
+    '2026-09-08', '2026-09-10', '2026-09-12', '2026-09-15', '2026-09-17',
+    '2026-09-19', '2026-09-22', '2026-09-24', '2026-09-26', '2026-09-29',
+    '2026-10-02', '2026-10-05', '2026-10-08', '2026-10-12', '2026-10-15'
+  ].map((dt, idx) => ({
+    id: `att-farhan-${idx + 1}`,
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-farhan-09',
+    student_id: 'stud-farhan-09',
+    student_code: 'DS-2026-00109',
+    student_name: 'Farhan Shaikh',
+    instructor_id: 'ins-suresh-02',
+    instructor_name: 'Suresh Patil',
+    session_allocation_id: 'sa-f1',
+    session_name: 'Basic Vehicle Controls & Practice',
+    vehicle_id: 'veh-swift-01',
+    vehicle_info: 'Swift Dzire (MH-12-AB-1234)',
+    attendance_date: dt,
+    marked_at: `${dt}T10:00:00+05:30`,
+    status: 'Present' as const,
+    remarks: 'Session completed.'
+  }))
 ];
 
 export const mockPayments: Payment[] = [
@@ -569,6 +920,40 @@ export const mockPayments: Payment[] = [
     status: 'Pending',
     received_at: '2026-11-10T11:00:00+05:30',
     notes: '2nd installment handed to counter staff'
+  },
+  {
+    id: 'pay-004',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-amit-03',
+    student_id: 'stud-amit-03',
+    student_name: 'Amit Deshmukh',
+    student_code: 'DS-2026-00103',
+    amount: 11000,
+    payment_method: 'Bank Transfer',
+    transaction_reference: 'NEFT/20260915/7821901',
+    status: 'Confirmed',
+    received_at: '2026-09-15T15:00:00+05:30',
+    confirmed_by: 'Owner Rajesh',
+    confirmed_at: '2026-09-15T15:10:00+05:30',
+    receipt_number: 'RCP-2026-00038',
+    notes: 'Complete Executive Combo fee cleared at admission'
+  },
+  {
+    id: 'pay-005',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-neha-04',
+    student_id: 'stud-neha-04',
+    student_name: 'Neha Joshi',
+    student_code: 'DS-2026-00104',
+    amount: 3500,
+    payment_method: 'UPI',
+    transaction_reference: 'UPI/20261018/1928374',
+    status: 'Confirmed',
+    received_at: '2026-10-18T16:15:00+05:30',
+    confirmed_by: 'Staff Sunita',
+    confirmed_at: '2026-10-18T16:20:00+05:30',
+    receipt_number: 'RCP-2026-00041',
+    notes: 'Two Wheeler course fee payment'
   }
 ];
 
@@ -658,6 +1043,65 @@ export const mockLicenceRecords: LicenceRecord[] = [
     ll_status: 'Documents Pending',
     rto_name: 'MH-12 Pune (Alandi Track)',
     remarks: 'Awaiting medical fitness Form 1A submission at counter before filing online LL application.'
+  },
+  {
+    id: 'lic-ananya-06',
+    school_id: 'school-apex-001',
+    student_id: 'stud-ananya-06',
+    student_name: 'Ananya Patel',
+    student_code: 'DS-2026-00106',
+    licence_type: 'LMV',
+    has_existing_ll: true,
+    ll_status: 'Already Available',
+    licence_number: 'MH14/LL/2026/0048192',
+    ll_issue_date: '2026-08-10',
+    ll_valid_till: '2027-02-09',
+    rto_name: 'MH-14 Pimpri Chinchwad RTO',
+    ll_document_url: '/documents/ananya_ll.pdf',
+    ll_document_name: 'Ananya_Learning_Licence.pdf',
+    ll_document_verified: true,
+    remarks: 'Valid LL provided during registration. No initial application reminder needed.'
+  },
+  {
+    id: 'lic-kartik-07',
+    school_id: 'school-apex-001',
+    student_id: 'stud-kartik-07',
+    student_name: 'Kartik Nair',
+    student_code: 'DS-2026-00107',
+    licence_type: 'LMV',
+    has_existing_ll: false,
+    ll_status: 'Not Applied',
+    reminder_eligible: true,
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    remarks: 'Completed 11 attended class days. Configured threshold reached for LL application reminder.'
+  },
+  {
+    id: 'lic-sneha-08',
+    school_id: 'school-apex-001',
+    student_id: 'stud-sneha-08',
+    student_name: 'Sneha Deshpande',
+    student_code: 'DS-2026-00108',
+    licence_type: 'MCWG',
+    has_existing_ll: false,
+    ll_status: 'Not Applied',
+    reminder_eligible: false,
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    remarks: '8 attended class days completed. Approaching 10-day threshold.'
+  },
+  {
+    id: 'lic-farhan-09',
+    school_id: 'school-apex-001',
+    student_id: 'stud-farhan-09',
+    student_name: 'Farhan Shaikh',
+    student_code: 'DS-2026-00109',
+    licence_type: 'LMV',
+    has_existing_ll: true,
+    ll_status: 'Already Available',
+    licence_number: 'MH12/LL/2026/0019280',
+    ll_issue_date: '2026-04-10',
+    ll_valid_till: '2026-10-09',
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    remarks: 'LL expired on 09-Oct-2026. Notice required for renewal/re-application on Parivahan.'
   }
 ];
 
@@ -680,6 +1124,66 @@ export const mockSchedules: ClassSchedule[] = [
   {
     id: 'sch-02',
     school_id: 'school-apex-001',
+    enrollment_id: 'enr-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    scheduled_start: '2026-11-12T15:00:00+05:30',
+    scheduled_end: '2026-11-12T16:00:00+05:30',
+    topic: 'Highway Speed Control & Overtaking',
+    status: 'Scheduled'
+  },
+  {
+    id: 'sch-03',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    scheduled_start: '2026-11-14T10:00:00+05:30',
+    scheduled_end: '2026-11-14T11:00:00+05:30',
+    topic: 'RTO Track Mock Test & Signage Quiz',
+    status: 'Scheduled'
+  },
+  {
+    id: 'sch-04',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    scheduled_start: '2026-11-09T08:00:00+05:30',
+    scheduled_end: '2026-11-09T09:00:00+05:30',
+    topic: 'Hill Start & Half-Clutch Slope Balance',
+    status: 'Completed'
+  },
+  {
+    id: 'sch-05',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    scheduled_start: '2026-11-08T08:00:00+05:30',
+    scheduled_end: '2026-11-08T09:00:00+05:30',
+    topic: 'Perpendicular & Box Parking',
+    status: 'Completed'
+  },
+  {
+    id: 'sch-06',
+    school_id: 'school-apex-001',
     enrollment_id: 'enr-priya-02',
     student_name: 'Priya Kulkarni',
     student_code: 'DS-2026-00102',
@@ -691,6 +1195,21 @@ export const mockSchedules: ClassSchedule[] = [
     scheduled_end: '2026-11-10T17:30:00+05:30',
     topic: 'Straight Road & Lane Discipline',
     status: 'Scheduled'
+  },
+  {
+    id: 'sch-07',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-priya-02',
+    student_name: 'Priya Kulkarni',
+    student_code: 'DS-2026-00102',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    scheduled_start: '2026-11-09T09:00:00+05:30',
+    scheduled_end: '2026-11-09T10:00:00+05:30',
+    topic: 'Clutch, Gear & Steering Coordination',
+    status: 'Completed'
   }
 ];
 
@@ -974,6 +1493,20 @@ export const mockStudentDocuments: StudentDocument[] = [
     verification_status: 'Verified',
     uploaded_at: '2026-10-20T11:35:00+05:30',
     verified_at: '2026-10-20T11:35:00+05:30'
+  },
+  {
+    id: 'doc-ananya-ll',
+    school_id: 'school-apex-001',
+    student_id: 'stud-ananya-06',
+    document_type: 'Learner_Licence',
+    document_name: 'Ananya_Learning_Licence.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-ananya-06/ananya_ll.pdf',
+    file_size: '1.5 MB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-10T11:05:00+05:30',
+    verified_at: '2026-10-10T11:10:00+05:30',
+    notes: 'Submitted during registration (Already Available)'
   }
 ];
 
@@ -990,4 +1523,70 @@ export const mockSupportTickets: SupportTicket[] = [
     status: 'In_Progress',
     created_at: '2026-11-08T15:30:00+05:30'
   }
+];
+
+export const mockCertificates: CourseCertificate[] = [
+  {
+    id: 'cert-amit-03',
+    school_id: 'school-apex-001',
+    enrollment_id: 'enr-amit-03',
+    student_id: 'stud-amit-03',
+    student_code: 'DS-2026-00103',
+    student_name: 'Amit Deshmukh',
+    course_id: 'course-combo-executive',
+    course_name: 'Executive Combo 4W + 2W Comprehensive (25 Sessions)',
+    instructor_id: 'ins-suresh-02',
+    instructor_name: 'Suresh Patil',
+    certificate_number: 'APEX-CRT-2026-00103',
+    completion_date: '2026-10-30',
+    issued_at: '2026-10-30T17:30:00+05:30',
+    status: 'Issued',
+    qr_verification_url: '/verify-certificate?certNumber=APEX-CRT-2026-00103',
+    download_count: 2,
+    last_downloaded_at: '2026-11-02T14:15:00+05:30',
+    template_id: 'tmpl-master-apex',
+    verified_sessions_count: 25,
+    total_required_sessions: 25,
+    qr_hash: 'v8f9210aa39e',
+    created_at: '2026-10-30T17:30:00+05:30'
+  }
+];
+
+export const mockCertificateFeedbacks: CertificateFeedback[] = [
+  {
+    id: 'fb-amit-01',
+    certificate_id: 'cert-amit-03',
+    student_id: 'stud-amit-03',
+    student_name: 'Amit Deshmukh',
+    overall_rating: 5,
+    instructor_rating: 5,
+    training_quality_rating: 5,
+    written_feedback: 'Incredible training! Suresh Sir was patient with clutch control and parallel parking. Cleared my RTO test on the first attempt with zero minus points.',
+    suggestions: 'Keep up the great dual-control cars and simulated track drills.',
+    google_review_clicked: true,
+    created_at: '2026-10-30T18:00:00+05:30'
+  }
+];
+
+export const mockCertificateDownloads: CertificateDownloadLog[] = [
+  {
+    id: 'dl-01',
+    certificate_id: 'cert-amit-03',
+    student_id: 'stud-amit-03',
+    student_name: 'Amit Deshmukh',
+    downloaded_at: '2026-10-30T18:05:00+05:30',
+    ip_address: '103.241.12.89'
+  },
+  {
+    id: 'dl-02',
+    certificate_id: 'cert-amit-03',
+    student_id: 'stud-amit-03',
+    student_name: 'Amit Deshmukh',
+    downloaded_at: '2026-11-02T14:15:00+05:30',
+    ip_address: '103.241.12.89'
+  }
+];
+
+export const mockCertificateTemplates: CertificateTemplate[] = [
+  DEFAULT_CERTIFICATE_TEMPLATE
 ];

@@ -17,17 +17,21 @@ import {
   Smartphone, 
   Lock, 
   Gauge,
-  Sparkles
+  Sparkles,
+  BookOpen,
+  Award,
+  PhoneCall,
+  Clock,
+  Check
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { students, instructors, vehicles, payments, attendanceRecords, switchRole } = useDrivingSchool();
+  const { students, instructors, vehicles, payments, attendanceRecords, switchRole, courses, school } = useDrivingSchool();
 
   // Metrics calculation
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'Active').length;
   const totalFleet = vehicles.length;
-  const availableFleet = vehicles.filter(v => v.status === 'Available' || v.status === 'Assigned').length;
   const totalCollections = payments
     .filter(p => p.status === 'Confirmed')
     .reduce((sum, p) => sum + p.amount, 0);
@@ -37,19 +41,15 @@ export default function HomePage() {
       role: 'owner',
       title: 'Owner & Super Admin',
       subtitle: 'Complete Operational Oversight & Control',
-      badge: 'Full Access',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+      badge: 'Full Authority',
       icon: ShieldCheck,
-      color: 'from-purple-900/40 via-slate-900 to-slate-900 border-purple-500/30',
-      textColor: 'text-purple-400',
-      btnColor: 'bg-purple-600 hover:bg-purple-500 text-white',
-      route: '/owner',
+      route: '/owner/dashboard',
       features: [
-        'Real-time operational dashboard & charts',
-        'Staff & Instructor performance tracking',
-        'Fee accounts & revenue analytics',
-        'Vehicle maintenance & insurance alerts',
-        'Complete immutable audit logging'
+        'Real-time executive KPI dashboard & analytics',
+        'Staff management & individual RBAC permissions',
+        'Fee reconciliation & payment confirmation desk',
+        'Fleet maintenance & insurance/PUC alerts',
+        'Complete immutable audit logging trail'
       ]
     },
     {
@@ -57,16 +57,12 @@ export default function HomePage() {
       title: 'Desk & Admissions Staff',
       subtitle: 'Student Lifecycle & Daily Operations',
       badge: 'Counter Operations',
-      badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
       icon: Users,
-      color: 'from-blue-900/40 via-slate-900 to-slate-900 border-blue-500/30',
-      textColor: 'text-blue-400',
-      btnColor: 'bg-blue-600 hover:bg-blue-500 text-white',
-      route: '/staff',
+      route: '/staff/dashboard',
       features: [
-        'Instant student registration (auto DS codes)',
+        'Instant student registration (auto DS-2026 codes)',
         'Course enrollment & instructor allocation',
-        'Record fee payments & print receipts',
+        'Record fee payments & print official receipts',
         'Schedule driving slots & RTO test dates',
         'Verify KYC & Form 1A medical documents'
       ]
@@ -76,18 +72,14 @@ export default function HomePage() {
       title: 'Driver / Instructor PWA',
       subtitle: 'Mobile-First Quick Attendance Marking',
       badge: 'Core Field Feature',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
       icon: Car,
-      color: 'from-emerald-900/40 via-slate-900 to-slate-900 border-emerald-500/30',
-      textColor: 'text-emerald-400',
-      btnColor: 'bg-emerald-600 hover:bg-emerald-500 text-white',
-      route: '/instructor',
+      route: '/instructor/dashboard',
       features: [
         'Search students by ID (e.g. DS-2026-00101)',
         'One-click atomic attendance marking',
         'Session quota enforcement (anti-duplicate)',
         'Driving performance remarks entry',
-        'Daily completed class count & summary'
+        'Daily completed class count & vehicle logs'
       ]
     },
     {
@@ -95,151 +87,157 @@ export default function HomePage() {
       title: 'Student Self-Service Portal',
       subtitle: 'Track Your Driving Journey & Licencing',
       badge: 'Private & Secure',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
       icon: GraduationCap,
-      color: 'from-amber-900/40 via-slate-900 to-slate-900 border-amber-500/30',
-      textColor: 'text-amber-400',
-      btnColor: 'bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold',
-      route: '/student',
+      route: '/student/dashboard',
       features: [
-        'Session-wise progress breakdown (e.g. 13/20)',
-        'Category mastery (Parking, Highway, Slopes)',
-        'Fee balance & downloadable PDF receipts',
-        'Live RTO status (LL Approved -> DL Test)',
-        'Assigned instructor & training car info'
+        'Strict Row Level Security (RLS) data privacy',
+        'Visual category-wise curriculum progress bar',
+        'Fee ledger, paid receipts & balance breakdown',
+        'Sarathi RTO LL & DL appointment tracker',
+        'Direct phone link to assigned driving instructor'
       ]
     }
   ];
 
   return (
-    <div className="space-y-16 pb-20">
+    <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800 bg-gradient-to-b from-slate-900/80 via-slate-950 to-slate-950">
-        <div className="max-w-7xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-            <Sparkles className="w-4 h-4" /> Next-Gen Driving Academy Operating System
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
-            The Digital Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500">Driving Schools</span>
-          </h1>
-
-          <p className="text-base sm:text-xl text-slate-400 max-w-3xl mx-auto font-normal leading-relaxed">
-            Unify student admissions, driving lessons, 1-click instructor attendance, fee ledgers, fleet health, and RTO Learner & Driving Licence milestones in one single source of truth.
-          </p>
-
-          {/* Quick Action Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Link
-              href="/owner"
-              onClick={() => switchRole('owner')}
-              className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-amber-500/25 flex items-center gap-2"
-            >
-              Launch Owner Console <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/instructor"
-              onClick={() => switchRole('instructor')}
-              className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition border border-slate-700 flex items-center gap-2"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400" /> Instructor Attendance PWA
-            </Link>
-          </div>
-        </div>
-
-        {/* Live Metrics Ticker Bar */}
-        <div className="max-w-6xl mx-auto mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <GraduationCap className="w-6 h-6" />
+      <section className="relative overflow-hidden py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-b border-[#E5EAF1] dark:border-[#1E293B]">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Main Hero Header */}
+          <div className="text-center space-y-6 max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5" />
+              Complete Single Driving School Management System • Version 1.0
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{totalStudents}</div>
-              <div className="text-xs text-slate-400">Total Students ({activeStudents} Active)</div>
+
+            <h1 className="text-4xl sm:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1]">
+              The Operating System for Modern Driving Academies
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+              Digitize your entire driving school operations in India: student admissions, 1-click instructor mobile attendance, fee collection, dual-control fleet, and Sarathi RTO licensing.
+            </p>
+
+            {/* CTA Group */}
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+              <Link
+                href="/admission"
+                className="px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/25 transition"
+              >
+                Start New Student Admission <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/login"
+                className="px-6 py-3.5 rounded-2xl bg-white dark:bg-[#111E32] hover:bg-slate-50 dark:hover:bg-[#14243A] text-slate-900 dark:text-white border border-[#E5EAF1] dark:border-[#1E293B] font-bold text-sm shadow-sm transition"
+              >
+                Sign In to Dashboard
+              </Link>
+              <Link
+                href="/courses"
+                className="px-6 py-3.5 rounded-2xl bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold text-sm transition"
+              >
+                View Courses & Fees
+              </Link>
             </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-6 h-6" />
+          {/* KPI Ticker Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-xl">
+            <div className="p-4 text-center border-r border-[#E5EAF1] dark:border-[#1E293B] last:border-0">
+              <span className="text-xs font-semibold text-slate-500 block">Total Students</span>
+              <div className="text-3xl font-black text-slate-900 dark:text-white mt-1 tabular-nums">
+                {totalStudents}
+              </div>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">{activeStudents} Active Learners</span>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{attendanceRecords.length}</div>
-              <div className="text-xs text-slate-400">Driving Sessions Marked</div>
-            </div>
-          </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Car className="w-6 h-6" />
+            <div className="p-4 text-center border-r border-[#E5EAF1] dark:border-[#1E293B] last:border-0">
+              <span className="text-xs font-semibold text-slate-500 block">Revenue Confirmed</span>
+              <div className="text-3xl font-black text-slate-900 dark:text-white mt-1 tabular-nums">
+                ₹{totalCollections.toLocaleString('en-IN')}
+              </div>
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold">100% Verified Ledger</span>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{availableFleet} / {totalFleet}</div>
-              <div className="text-xs text-slate-400">Dual-Control Vehicles</div>
-            </div>
-          </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <IndianRupee className="w-6 h-6" />
+            <div className="p-4 text-center border-r border-[#E5EAF1] dark:border-[#1E293B] last:border-0">
+              <span className="text-xs font-semibold text-slate-500 block">Dual-Control Fleet</span>
+              <div className="text-3xl font-black text-slate-900 dark:text-white mt-1 tabular-nums">
+                {totalFleet} Cars
+              </div>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">All Dual-Brake Equipped</span>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">₹{totalCollections.toLocaleString('en-IN')}</div>
-              <div className="text-xs text-slate-400">Confirmed Revenue</div>
+
+            <div className="p-4 text-center">
+              <span className="text-xs font-semibold text-slate-500 block">Attendance Logs</span>
+              <div className="text-3xl font-black text-slate-900 dark:text-white mt-1 tabular-nums">
+                {attendanceRecords.length}
+              </div>
+              <span className="text-[11px] text-purple-600 dark:text-purple-400 font-semibold">Atomic 1-Click Logs</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4 Role Portals Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-2 mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Four Dedicated Role Interfaces</h2>
-          <p className="text-sm text-slate-400">
-            Strict role-based access control (RBAC). Each actor sees only what they need to succeed.
+      {/* 4 Dedicated Role Portals */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10 w-full">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            Four Specialized Role-Based Dashboards
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            One consistent design system with tailored workflows for every team member and student
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {portals.map((p) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {portals.map(p => {
             const Icon = p.icon;
             return (
               <div
                 key={p.role}
-                className={`relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br ${p.color} border transition duration-300 hover:shadow-2xl hover:scale-[1.01] flex flex-col justify-between`}
+                className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
               >
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Top Badge & Icon */}
                   <div className="flex items-center justify-between">
-                    <div className={`w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center ${p.textColor}`}>
-                      <Icon className="w-6 h-6" />
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                      <Icon className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${p.badgeColor}`}>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                       {p.badge}
                     </span>
                   </div>
 
+                  {/* Header Title */}
                   <div>
-                    <h3 className="text-xl font-bold text-white">{p.title}</h3>
-                    <p className="text-xs text-slate-400 mt-1">{p.subtitle}</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition">
+                      {p.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {p.subtitle}
+                    </p>
                   </div>
 
-                  <ul className="space-y-2 pt-2 border-t border-slate-800/60">
-                    {p.features.map((f, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs text-slate-300">
-                        <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${p.textColor}`} />
-                        <span>{f}</span>
+                  {/* Features List */}
+                  <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
+                    {p.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-slate-800/80">
+                {/* Direct Action Link */}
+                <div className="pt-6 mt-6 border-t border-[#E5EAF1] dark:border-[#1E293B]">
                   <Link
                     href={p.route}
                     onClick={() => switchRole(p.role as any)}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition ${p.btnColor}`}
+                    className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
                   >
-                    Enter {p.title} <ArrowRight className="w-3.5 h-3.5" />
+                    Launch {p.title.split(' ')[0]} Portal <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -248,47 +246,32 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Core Architectural Highlights */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-10 space-y-8">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Enterprise Standards</span>
-            <h2 className="text-2xl font-bold text-white mt-1">Built to Specifications for Indian Driving Academies</h2>
-            <p className="text-sm text-slate-400 mt-2">
-              Designed around actual ground realities: instructor mobile connectivity, cash/UPI split fee installments, and Sarathi RTO Learner & Driving Licence test pipelines.
+      {/* Core Workflow Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#14243A] text-white border-t border-[#1E293B] mt-auto">
+        <div className="max-w-7xl mx-auto space-y-10">
+          <div className="text-center space-y-2 max-w-2xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-black">
+              The Complete Digital Driving Lifecycle
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300">
+              From the moment a learner visits your desk to the day their official Driving Licence is issued
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-2">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center text-xs">
+            {[
+              { step: '01', title: 'Student Admission', desc: 'Auto DS-2026 code generation & course enrollment' },
+              { step: '02', title: 'Session Allocation', desc: 'Basic, Road, Reverse, Night & Highway modules' },
+              { step: '03', title: '1-Click Attendance', desc: 'Driver marks attendance with quota checks' },
+              { step: '04', title: 'Fee Collection Desk', desc: 'UPI/Cash records & serialized receipts' },
+              { step: '05', title: 'Sarathi RTO Tracking', desc: 'LL approval to practical DL track test' }
+            ].map(st => (
+              <div key={st.step} className="p-5 rounded-2xl bg-[#111E32] border border-[#1E293B] space-y-2">
+                <span className="font-mono text-xl font-black text-blue-400 block">{st.step}</span>
+                <h4 className="font-bold text-white text-sm">{st.title}</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed">{st.desc}</p>
               </div>
-              <h4 className="text-sm font-semibold text-white">Atomic 1-Click Attendance</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Prevents duplicate entries with session quota decrementing. An instructor cannot mark more than allocated sessions without owner approval.
-              </p>
-            </div>
-
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-2">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                <Lock className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-semibold text-white">Strict Student Privacy & RLS</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Row Level Security enforces that students cannot view other learners' progress or fees. Instructors only see their own assigned cohort.
-              </p>
-            </div>
-
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-2">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <FileCheck2 className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-semibold text-white">RTO LL & DL Tracking</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Full milestone tracking from Application Submitted to Learner Licence Issued, mandatory 30-day training window, and practical test appointment.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
