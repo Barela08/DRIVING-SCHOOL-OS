@@ -50,6 +50,12 @@ export default function AdmissionPage() {
   const [downPayment, setDownPayment] = useState(5000);
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer'>('UPI');
 
+  // Learning Licence Registration Data
+  const [llData, setLlData] = useState<LLRegistrationData>({
+    hasExistingLL: false,
+    llVehicleCategory: 'LMV (Light Motor Vehicle - Car)'
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [admissionSuccess, setAdmissionSuccess] = useState<{
     studentCode: string;
@@ -92,7 +98,14 @@ export default function AdmissionPage() {
         paymentMethod,
         gender,
         dateOfBirth,
-        address: { city, area, pincode }
+        address: { city, area, pincode },
+        hasExistingLL: llData.hasExistingLL,
+        llNumber: llData.llNumber,
+        llIssueDate: llData.llIssueDate,
+        llExpiryDate: llData.llExpiryDate,
+        llVehicleCategory: llData.llVehicleCategory,
+        llDocumentName: llData.llDocumentName,
+        llDocumentUrl: llData.llDocumentUrl
       });
 
       if (res.success) {
@@ -405,11 +418,26 @@ export default function AdmissionPage() {
               </div>
             </div>
 
-            {/* 3. Fee & Payment Entry */}
+            {/* 3. Mandatory Learning Licence (LL) Compliance */}
             <div className="space-y-4">
               <div className="pb-2 border-b border-[#E5EAF1] dark:border-[#1E293B]">
                 <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                  <IndianRupee className="w-4 h-4 text-blue-600" /> 3. Fee Agreement & Initial Payment
+                  <FileCheck2 className="w-4 h-4 text-amber-500" /> 3. Learning Licence (LL) Verification & Tracking
+                </h3>
+              </div>
+
+              <LLRegistrationFields
+                value={llData}
+                onChange={setLlData}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* 4. Fee & Payment Entry */}
+            <div className="space-y-4">
+              <div className="pb-2 border-b border-[#E5EAF1] dark:border-[#1E293B]">
+                <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                  <IndianRupee className="w-4 h-4 text-blue-600" /> 4. Fee Agreement & Initial Payment
                 </h3>
               </div>
 
