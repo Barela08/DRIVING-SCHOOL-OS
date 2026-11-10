@@ -289,3 +289,77 @@ export interface AuditLog {
   details: string;
   created_at: string;
 }
+
+export interface StaffMember {
+  id: string;
+  school_id: string;
+  user_id: string;
+  employee_code: string; // e.g. STF-001
+  full_name: string;
+  phone: string;
+  email: string;
+  role_title: string;
+  is_active: boolean;
+  permissions: {
+    can_admit_students: boolean;
+    can_manage_fees: boolean;
+    can_confirm_payments: boolean;
+    can_assign_instructors: boolean;
+    can_manage_licences: boolean;
+    can_manage_vehicles: boolean;
+    can_view_reports: boolean;
+  };
+  last_login?: string;
+  created_at: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  school_id: string;
+  student_id?: string;
+  title: string;
+  message: string;
+  category: 'admission' | 'attendance' | 'payment' | 'schedule' | 'licence' | 'vehicle' | 'system' | 'announcement';
+  is_read: boolean;
+  created_at: string;
+  link_url?: string;
+  action_type?: string;
+}
+
+export type DocumentType = 
+  | 'Aadhaar' 
+  | 'Passport_Photo' 
+  | 'Form_1A_Medical' 
+  | 'Address_Proof' 
+  | 'Learner_Licence' 
+  | 'Driving_Licence' 
+  | 'Payment_Receipt' 
+  | 'Course_Certificate';
+
+export interface StudentDocument {
+  id: string;
+  school_id: string;
+  student_id: string;
+  document_type: DocumentType;
+  document_name: string;
+  file_url: string;
+  file_size?: string;
+  mime_type?: string;
+  verification_status: 'Pending' | 'Verified' | 'Rejected';
+  uploaded_at: string;
+  verified_at?: string;
+  notes?: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  school_id: string;
+  student_id: string;
+  student_name: string;
+  student_code: string;
+  category: 'scheduling' | 'instructor' | 'fee' | 'licence' | 'general';
+  subject: string;
+  message: string;
+  status: 'Open' | 'In_Progress' | 'Resolved';
+  created_at: string;
+}

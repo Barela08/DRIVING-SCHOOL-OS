@@ -1,789 +1,853 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { 
-  ShieldCheck, 
   Users, 
-  Car, 
-  IndianRupee, 
-  CheckCircle2, 
-  Clock, 
+  Award, 
   Calendar, 
-  TrendingUp, 
+  CheckCircle2, 
+  IndianRupee, 
+  Clock, 
   FileCheck2, 
-  Wrench, 
+  Car, 
+  Search, 
+  Filter, 
+  Printer, 
+  Download, 
+  Plus, 
+  ShieldCheck, 
+  ChevronRight, 
+  AlertTriangle, 
+  BookOpen, 
   History, 
   Settings, 
-  Search, 
-  Printer, 
-  Filter, 
-  Sparkles, 
-  AlertTriangle,
-  Award,
-  ChevronRight,
-  UserPlus,
-  BookOpen
+  TrendingUp, 
+  FileText,
+  UserCheck,
+  Bell,
+  BarChart3,
+  ExternalLink,
+  Check,
+  X
 } from 'lucide-react';
+import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { OwnerTopNav } from '@/components/owner/OwnerTopNav';
+import { StudentDetailModal } from '@/components/owner/StudentDetailModal';
+import { QuickAddModals } from '@/components/owner/QuickAddModals';
+import { AnalyticsCharts } from '@/components/owner/AnalyticsCharts';
 import { ReceiptModal } from '@/components/ReceiptModal';
-import { Payment } from '@/types';
+import { Student, Payment } from '@/types';
 
-export default function OwnerDashboard() {
+export default function OwnerDashboardPage() {
   const { 
     school, 
     branches, 
     students, 
     courses, 
     instructors, 
+    staffMembers, 
     vehicles, 
     enrollments, 
     attendanceRecords, 
     payments, 
     licenceRecords, 
+    schedules, 
+    notifications, 
     auditLogs,
-    confirmPayment 
+    confirmPayment, 
+    rejectPayment, 
+    exportToCSV 
   } = useDrivingSchool();
 
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'students' | 'instructors' | 'attendance' | 'finances' | 'licences' | 'fleet' | 'audit' | 'courses'
-  >('overview');
+  // Navigation & Layout states
+  const [activeModule, setActiveModule] = useState('dashboard');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState<'today' | '7days' | '30days' | 'month' | 'custom'>('today');
 
-  const [searchStudent, setSearchStudent] = useState('');
+  // Modals
+  const [quickAddType, setQuickAddType] = useState<'student' | 'instructor' | 'staff' | 'payment' | 'schedule' | 'vehicle' | null>(null);
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<Student | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
 
+  // Filters
+  const [operationsStatusFilter, setOperationsStatusFilter] = useState<'all' | 'Scheduled' | 'Completed' | 'Pending' | 'Cancelled'>('all');
+  const [studentSearchText, setStudentSearchText] = useState('');
+  const [studentStatusFilter, setStudentStatusFilter] = useState('all');
+
+  // Today Date
+  const [todayStr, setTodayStr] = useState('2026-11-10');
+  useEffect(() => {
+    setTodayStr(new Date().toISOString().split('T')[0]);
+  }, []);
+
   // Financial calculations
-  const totalRevenue = payments
-    .filter(p => p.status === 'Confirmed')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const pendingPayments = payments.filter(p => p.status === 'Pending');
-  const pendingRevenue = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-
   const totalAgreedFees = enrollments.reduce((sum, e) => sum + e.agreed_fee, 0);
-  const outstandingFeesTotal = Math.max(0, totalAgreedFees - totalRevenue);
+  const confirmedPayments = payments.filter(p => p.status === 'Confirmed');
+  const totalConfirmedRevenue = confirmedPayments.reduce((sum, p) => sum + p.amount, 0);
+  const pendingPayments = payments.filter(p => p.status === 'Pending');
+  const totalPendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalOutstanding = Math.max(0, totalAgreedFees - totalConfirmedRevenue);
+
+  const todayConfirmedPayments = confirmedPayments.filter(p => p.received_at.startsWith(todayStr));
+  const todayCollectionAmount = todayConfirmedPayments.reduce((sum, p) => sum + p.amount, 0);
+
+  // Student metrics
+  const totalRegisteredStudents = students.length;
+  const activeStudents = students.filter(s => s.status === 'Active').length;
+  const newAdmissionsCount = students.filter(s => s.status === 'Registered' || s.admission_date.startsWith('2026-11')).length;
+
+  // Instructor metrics
+  const totalInstructors = instructors.length;
+  const activeInstructors = instructors.filter(i => i.employment_status === 'active').length;
 
   // Today's classes & attendance
-  const [todayDate, setTodayDate] = useState('2026-11-10');
-  React.useEffect(() => {
-    setTodayDate(new Date().toISOString().split('T')[0]);
-  }, []);
-  const todayAttendance = attendanceRecords.filter(a => a.attendance_date === todayDate);
+  const todayClassesScheduled = schedules.length;
+  const todayAttendanceList = attendanceRecords.filter(a => a.attendance_date === todayStr);
+  const todayCompletedCount = todayAttendanceList.filter(a => a.status === 'Present').length;
+  const attendanceRate = todayClassesScheduled > 0 ? Math.round((todayCompletedCount / todayClassesScheduled) * 100) : 100;
 
-  // Upcoming RTO tests
-  const upcomingTests = licenceRecords.filter(l => l.ll_status === 'DL Test Scheduled' || l.test_date);
-
-  // Vehicles needing attention (PUC / Insurance expiring within 60 days)
-  const expiringVehicles = vehicles.filter(v => v.puc_expiry && new Date(v.puc_expiry) < new Date('2027-01-01'));
+  // Licence & Fleet
+  const upcomingLicenceTests = licenceRecords.filter(l => l.ll_status === 'DL Test Scheduled' || l.test_date);
+  const availableVehiclesCount = vehicles.filter(v => v.status === 'Available' || v.status === 'Assigned').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-900 border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-white">{school.name} — Owner Console</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Super Admin
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-Time School Analytics • Financial Audit • Instructor Performance • Fleet Health • RTO Milestones
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
+      {/* Top Navbar */}
+      <OwnerTopNav 
+        activeModule={activeModule}
+        isCollapsed={isCollapsed}
+        setIsMobileOpen={setIsMobileOpen}
+        onOpenQuickAdd={(type) => setQuickAddType(type)}
+        onSelectStudent={(s) => setSelectedStudentForDetail(s)}
+      />
 
-        {/* Quick School Meta */}
-        <div className="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-4 py-2.5 rounded-2xl text-xs">
-          <div>
-            <span className="text-slate-400 text-[10px] block">RTO License:</span>
-            <span className="font-mono font-bold text-amber-400">{school.rto_registration_no}</span>
-          </div>
-          <div className="border-l border-slate-800 pl-4">
-            <span className="text-slate-400 text-[10px] block">Branches:</span>
-            <span className="font-bold text-white">{branches.length} Active Centers</span>
-          </div>
-        </div>
-      </div>
+      <div className="flex-1 flex">
+        {/* Fixed Left Sidebar */}
+        <OwnerSidebar 
+          activeModule={activeModule}
+          setActiveModule={setActiveModule}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
 
-      {/* Owner Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-xs font-semibold overflow-x-auto scrollbar-none">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'overview' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <TrendingUp className="w-3.5 h-3.5" /> Executive KPI Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('attendance')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'attendance' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" /> Live Attendance Feed ({attendanceRecords.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('finances')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'finances' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <IndianRupee className="w-3.5 h-3.5" /> Financials & Collections
-          {pendingPayments.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-bold">
-              {pendingPayments.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('students')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'students' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5" /> All Students ({students.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('instructors')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'instructors' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <Award className="w-3.5 h-3.5" /> Instructors & Staff ({instructors.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('licences')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'licences' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <FileCheck2 className="w-3.5 h-3.5" /> RTO Licences ({licenceRecords.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('fleet')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'fleet' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <Car className="w-3.5 h-3.5" /> Fleet & Vehicles ({vehicles.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('courses')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'courses' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" /> Courses & Modules ({courses.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`px-3.5 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
-            activeTab === 'audit' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white bg-slate-900'
-          }`}
-        >
-          <History className="w-3.5 h-3.5" /> Audit Logs ({auditLogs.length})
-        </button>
-      </div>
+        {/* Scrollable Main Workspace */}
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300 ${
+          isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}>
+          {/* ========================================================================= */}
+          {/* 1. DASHBOARD OVERVIEW VIEW                                              */}
+          {/* ========================================================================= */}
+          {activeModule === 'dashboard' && (
+            <div className="space-y-8 max-w-7xl mx-auto">
+              {/* Header Title & Date Range Filter */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Dashboard</h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Welcome back, Owner. Here is your driving school's complete operational overview.
+                  </p>
+                </div>
 
-      {/* TAB 1: EXECUTIVE KPI OVERVIEW */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Top 4 KPI Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
-                <span>Total Revenue Collected</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                  <IndianRupee className="w-4 h-4" />
+                {/* Date-Range Selector */}
+                <div className="flex items-center bg-white dark:bg-[#111E32] p-1 rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B] text-xs font-semibold shadow-sm">
+                  {(['today', '7days', '30days', 'month', 'custom'] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setDateFilter(f)}
+                      className={`px-3 py-1.5 rounded-xl capitalize transition ${
+                        dateFilter === f
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {f === 'today' && 'Today'}
+                      {f === '7days' && 'Last 7 Days'}
+                      {f === '30days' && 'Last 30 Days'}
+                      {f === 'month' && 'This Month'}
+                      {f === 'custom' && 'Custom'}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="text-2xl font-black text-white">₹{totalRevenue.toLocaleString('en-IN')}</div>
-              <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                <span>Verified in Bank / Cash Ledger</span>
-              </p>
-            </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
-                <span>Outstanding Dues</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-amber-400">₹{outstandingFeesTotal.toLocaleString('en-IN')}</div>
-              <p className="text-[11px] text-slate-400">
-                Pending balance from active enrollments
-              </p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
-                <span>Active Learners</span>
-                <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                  <Users className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-white">{students.filter(s => s.status === 'Active').length}</div>
-              <p className="text-[11px] text-slate-400">
-                {students.length} Total Enrolled ({instructors.length} Instructors)
-              </p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
-                <span>RTO Tests Due</span>
-                <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                  <FileCheck2 className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-purple-400">{upcomingTests.length}</div>
-              <p className="text-[11px] text-slate-400">
-                Learner / Driving test appointments
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Insights Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Today's Driving Sessions Feed */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Recent Verified Driving Attendance
-                </h3>
-                <span className="text-xs text-slate-400 font-mono">Live Stream</span>
-              </div>
-
-              <div className="space-y-2.5">
-                {attendanceRecords.slice(0, 4).map(att => (
-                  <div key={att.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">{att.student_name}</span>
-                        <span className="font-mono text-[10px] text-slate-400">({att.student_code})</span>
-                      </div>
-                      <span className="text-[11px] text-slate-300 block mt-0.5">{att.session_name}</span>
-                      <span className="text-[10px] text-slate-500 block">Instructor: {att.instructor_name}</span>
+              {/* SECTION 5: 8 PREMIUM KPI CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Card 1: Total Students */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Total Students</span>
+                    <div className="w-9 h-9 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <Users className="w-4 h-4" />
                     </div>
-                    <div className="text-right">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
-                        {att.status}
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{totalRegisteredStudents}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{activeStudents} Active</span>
+                      <span>•</span>
+                      <span>{newAdmissionsCount} New</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Active Instructors */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Active Instructors</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <Award className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{activeInstructors}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span>Total: {totalInstructors} Drivers</span>
+                      <span>•</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">100% On-Duty</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Today's Classes */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Today's Classes</span>
+                    <div className="w-9 h-9 rounded-xl bg-purple-600/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{todayClassesScheduled}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">{todayCompletedCount} Completed</span>
+                      <span>•</span>
+                      <span>{Math.max(0, todayClassesScheduled - todayCompletedCount)} Remaining</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Attendance */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Attendance</span>
+                    <div className="w-9 h-9 rounded-xl bg-teal-600/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-teal-600 dark:text-teal-400 tabular-nums">{attendanceRate}%</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span>{todayAttendanceList.length} Sessions Logged</span>
+                      <span>•</span>
+                      <span>0 Missed</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 5: Total Fees */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Total Course Fees</span>
+                    <div className="w-9 h-9 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <IndianRupee className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
+                      ₹{totalAgreedFees.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">₹{totalConfirmedRevenue.toLocaleString('en-IN')} Collected</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 6: Today's Collection */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Today's Collection</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      ₹{todayCollectionAmount.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span>{todayConfirmedPayments.length} Transactions confirmed</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 7: Pending Fees */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Pending Fees</span>
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-amber-500 tabular-nums">
+                      ₹{totalOutstanding.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span>Due before DL test appointments</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 8: Upcoming Licence Tests */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
+                    <span className="font-semibold">Upcoming Licence Tests</span>
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <FileCheck2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {upcomingLicenceTests.length}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <span>RTO Alandi Track Scheduled</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 6: ANALYTICS CHARTS */}
+              <AnalyticsCharts />
+
+              {/* SECTION 7: TODAY'S DRIVING OPERATIONS */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">Today's Driving Operations</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Live operational monitor across all instructors and vehicles</p>
+                  </div>
+
+                  {/* Operation Status Filter */}
+                  <div className="flex items-center gap-1 bg-[#F5F7FB] dark:bg-[#0B1728] p-1 rounded-xl border border-[#E5EAF1] dark:border-[#1E293B] text-xs font-semibold">
+                    {(['all', 'Scheduled', 'Completed', 'Pending', 'Cancelled'] as const).map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setOperationsStatusFilter(st)}
+                        className={`px-3 py-1 rounded-lg capitalize transition ${
+                          operationsStatusFilter === st
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B]">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                      <tr>
+                        <th className="px-4 py-3">Student</th>
+                        <th className="px-4 py-3">Instructor</th>
+                        <th className="px-4 py-3">Session Topic</th>
+                        <th className="px-4 py-3">Scheduled Time</th>
+                        <th className="px-4 py-3">Vehicle</th>
+                        <th className="px-4 py-3 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E5EAF1] dark:divide-[#1E293B]">
+                      {schedules.map(sch => (
+                        <tr key={sch.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                          <td className="px-4 py-3.5">
+                            <span className="font-bold text-slate-900 dark:text-white block">{sch.student_name}</span>
+                            <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400">{sch.student_code}</span>
+                          </td>
+                          <td className="px-4 py-3.5 font-medium">{sch.instructor_name}</td>
+                          <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">{sch.topic}</td>
+                          <td className="px-4 py-3.5 font-mono text-slate-500">
+                            {new Date(sch.scheduled_start).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-4 py-3.5 font-mono">{sch.vehicle_name || 'Swift (MH-12-AB-1234)'}</td>
+                          <td className="px-4 py-3.5 text-right">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                              {sch.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* SECTION 8 & 9: INSTRUCTOR PERFORMANCE & RECENT ADMISSIONS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Instructor Performance */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <Award className="w-4 h-4 text-emerald-600" /> Instructor Roster Performance
+                    </h3>
+                    <span className="text-xs text-slate-400">{instructors.length} active</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {instructors.map(ins => (
+                      <div key={ins.id} className="p-4 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-xs">
+                              {ins.full_name.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-white block">{ins.full_name}</span>
+                              <span className="font-mono text-[10px] text-slate-400">{ins.instructor_code}</span>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            {ins.employment_status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+                          <div>
+                            <span>Assigned Car: </span>
+                            <strong className="text-slate-800 dark:text-slate-200 block truncate">{ins.assigned_vehicle_name || 'Swift Dzire'}</strong>
+                          </div>
+                          <div>
+                            <span>Active Students: </span>
+                            <strong className="text-slate-800 dark:text-slate-200 block">{ins.active_students_count}</strong>
+                          </div>
+                          <div>
+                            <span>Today's Classes: </span>
+                            <strong className="text-emerald-600 dark:text-emerald-400 block">{ins.today_sessions_count} Done</strong>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Student Admissions */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" /> Recent Student Admissions
+                    </h3>
+                    <button
+                      onClick={() => setQuickAddType('student')}
+                      className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Student
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {students.slice(0, 4).map(s => (
+                      <div 
+                        key={s.id} 
+                        onClick={() => setSelectedStudentForDetail(s)}
+                        className="p-3.5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] flex items-center justify-between text-xs hover:border-blue-500 cursor-pointer transition"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 dark:text-white">{s.full_name}</span>
+                            <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-bold">{s.student_code}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">{s.enrolled_course_name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            {s.status}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 mt-1 font-mono">{s.admission_date}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 2. ALL STUDENTS MASTER DIRECTORY VIEW                                     */}
+          {/* ========================================================================= */}
+          {activeModule === 'students' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-5 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Master Student Directory</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Access, inspect, and update complete student profile records</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={studentSearchText}
+                      onChange={(e) => setStudentSearchText(e.target.value)}
+                      placeholder="Filter by name, code, phone..."
+                      className="bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setQuickAddType('student')}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> New Student
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B]">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                    <tr>
+                      <th className="px-4 py-3">Code</th>
+                      <th className="px-4 py-3">Full Name</th>
+                      <th className="px-4 py-3">Course</th>
+                      <th className="px-4 py-3">Assigned Instructor</th>
+                      <th className="px-4 py-3">Sessions</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5EAF1] dark:divide-[#1E293B]">
+                    {students
+                      .filter(s => 
+                        s.student_code.toLowerCase().includes(studentSearchText.toLowerCase()) ||
+                        s.full_name.toLowerCase().includes(studentSearchText.toLowerCase())
+                      )
+                      .map(s => {
+                        const enr = enrollments.find(e => e.student_id === s.id);
+                        return (
+                          <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                            <td className="px-4 py-3.5 font-mono font-bold text-blue-600 dark:text-blue-400">{s.student_code}</td>
+                            <td className="px-4 py-3.5">
+                              <span className="font-bold text-slate-900 dark:text-white block">{s.full_name}</span>
+                              <span className="text-[11px] text-slate-400">{s.phone}</span>
+                            </td>
+                            <td className="px-4 py-3.5">{s.enrolled_course_name}</td>
+                            <td className="px-4 py-3.5">{s.assigned_instructor_name || 'Vikram Shinde'}</td>
+                            <td className="px-4 py-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              {enr ? `${enr.completed_sessions} / ${enr.total_sessions}` : '0 / 20'}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                {s.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right">
+                              <button
+                                onClick={() => setSelectedStudentForDetail(s)}
+                                className="px-2.5 py-1 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition font-medium text-[11px]"
+                              >
+                                View 10-Tab Profile
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 9. FEES & PAYMENTS FINANCIAL VIEW                                         */}
+          {/* ========================================================================= */}
+          {activeModule === 'finances' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Fees & Financial Overview</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Confirmed Revenue: ₹{totalConfirmedRevenue.toLocaleString('en-IN')} • Outstanding: ₹{totalOutstanding.toLocaleString('en-IN')}</p>
+                </div>
+                <button
+                  onClick={() => setQuickAddType('payment')}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Record Payment
+                </button>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-[#E5EAF1] dark:border-[#1E293B]">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                    <tr>
+                      <th className="px-4 py-3">Receipt / ID</th>
+                      <th className="px-4 py-3">Student</th>
+                      <th className="px-4 py-3">Amount</th>
+                      <th className="px-4 py-3">Mode</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5EAF1] dark:divide-[#1E293B]">
+                    {payments.map(p => (
+                      <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-700 dark:text-slate-300">
+                          {p.receipt_number || 'PENDING APPROVAL'}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">{p.student_name}</td>
+                        <td className="px-4 py-3.5 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                          ₹{p.amount.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3.5 font-medium">{p.payment_method}</td>
+                        <td className="px-4 py-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            p.status === 'Confirmed'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                              : 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 font-mono text-slate-400">
+                          {new Date(p.received_at).toLocaleDateString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3.5 text-right space-x-2">
+                          {p.status === 'Pending' ? (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  const res = await confirmPayment(p.id);
+                                  if (res.success) alert(`Payment Confirmed! Receipt #${res.receiptNumber}`);
+                                }}
+                                className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px]"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => rejectPayment(p.id, 'Discrepancy noted')}
+                                className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px]"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setSelectedReceipt(p)}
+                              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-blue-600 dark:text-blue-400 font-medium text-[11px] inline-flex items-center gap-1"
+                            >
+                              <Printer className="w-3 h-3" /> Print Receipt
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 14. REPORTS & ANALYTICS VIEW (CSV EXPORT)                                 */}
+          {/* ========================================================================= */}
+          {activeModule === 'reports' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-6 max-w-7xl mx-auto">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Downloadable Operational Reports</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Export verified records to standard CSV spreadsheets</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { id: 'students', label: 'Students Master Report', desc: 'All registered students & course allocations' },
+                  { id: 'attendance', label: 'Attendance Audit Report', desc: 'Timestamped sessions marked by instructors' },
+                  { id: 'payments', label: 'Revenue & Collection Report', desc: 'Complete payment receipts ledger' },
+                  { id: 'fleet', label: 'Fleet & Maintenance Report', desc: 'Vehicles, dual-control, and PUC status' }
+                ].map(rep => (
+                  <div key={rep.id} className="p-5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{rep.label}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{rep.desc}</p>
+                    </div>
+                    <button
+                      onClick={() => exportToCSV(rep.id)}
+                      className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download CSV
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 13. STAFF MANAGEMENT VIEW                                                 */}
+          {/* ========================================================================= */}
+          {activeModule === 'staff' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-5 max-w-7xl mx-auto">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Staff Management & Permissions</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure desk permissions and RBAC overrides</p>
+                </div>
+                <button
+                  onClick={() => setQuickAddType('staff')}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Staff Member
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {staffMembers.map(stf => (
+                  <div key={stf.id} className="p-5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-sm text-slate-900 dark:text-white block">{stf.full_name}</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{stf.role_title}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        ACTIVE
                       </span>
-                      <span className="block text-[10px] text-slate-500 font-mono mt-1">
-                        {new Date(att.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 block text-[11px]">Granular Permissions:</span>
+                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                        <span className={`px-2 py-0.5 rounded ${stf.permissions.can_admit_students ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                          Admit Students: {stf.permissions.can_admit_students ? 'Yes' : 'No'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${stf.permissions.can_confirm_payments ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                          Confirm Fees: {stf.permissions.can_confirm_payments ? 'Yes' : 'No'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${stf.permissions.can_manage_licences ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                          Manage RTO: {stf.permissions.can_manage_licences ? 'Yes' : 'No'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Pending Payments Needing Owner Approval */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <IndianRupee className="w-4 h-4 text-amber-400" /> Pending Payment Confirmations
-                </h3>
-                <span className="text-xs font-bold text-amber-400 font-mono">₹{pendingRevenue.toLocaleString('en-IN')} pending</span>
+          {/* ========================================================================= */}
+          {/* OTHER MODULE FALLBACK RENDERING (Courses, Licences, Fleet, Audit, etc.)    */}
+          {/* ========================================================================= */}
+          {!['dashboard', 'students', 'finances', 'reports', 'staff'].includes(activeModule) && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-4 max-w-7xl mx-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5EAF1] dark:border-[#1E293B]">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white capitalize">
+                    {activeModule} Operations Module
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Full database connectivity to PostgreSQL & Supabase RLS
+                  </p>
+                </div>
               </div>
 
-              {pendingPayments.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  All recorded payments are confirmed and receipts issued!
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {pendingPayments.map(pay => (
-                    <div key={pay.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white">{pay.student_name}</span>
-                          <span className="text-emerald-400 font-bold font-mono">₹{pay.amount.toLocaleString('en-IN')}</span>
+              {activeModule === 'attendance' && (
+                <div className="space-y-3 text-xs">
+                  <span className="font-bold block">Live Verified Attendance Stream ({attendanceRecords.length})</span>
+                  <div className="space-y-2">
+                    {attendanceRecords.map(att => (
+                      <div key={att.id} className="p-3.5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 dark:text-white">{att.student_name}</span>
+                            <span className="font-mono text-blue-600">{att.student_code}</span>
+                          </div>
+                          <span className="text-slate-500 block mt-0.5">{att.session_name} • Instructor: {att.instructor_name}</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          Mode: {pay.payment_method} • {pay.notes || 'Course fee'}
+                        <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-500/10 text-emerald-600">
+                          {att.status}
                         </span>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                      <button
-                        onClick={async () => {
-                          const res = await confirmPayment(pay.id);
-                          if (res.success) {
-                            alert(`Confirmed! Receipt #${res.receiptNumber} generated.`);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20"
-                      >
-                        Approve & Issue Receipt
-                      </button>
+              {activeModule === 'licences' && (
+                <div className="space-y-3 text-xs">
+                  <span className="font-bold block">RTO LL & DL Tracking Pipeline</span>
+                  <div className="space-y-2">
+                    {licenceRecords.map(lic => (
+                      <div key={lic.id} className="p-3.5 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-white">{lic.student_name}</span>
+                          <span className="text-slate-500 block">{lic.licence_type} • RTO: {lic.rto_name}</span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full font-bold text-[10px] bg-blue-500/10 text-blue-600">
+                          {lic.ll_status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'vehicles' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  {vehicles.map(v => (
+                    <div key={v.id} className="p-4 rounded-2xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">{v.brand} {v.model}</span>
+                        <span className="font-mono font-bold text-blue-600">{v.registration_number}</span>
+                      </div>
+                      <p className="text-slate-500">Dual Control: {v.is_dual_control ? 'Yes' : 'No'} • Status: {v.status}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeModule === 'audit' && (
+                <div className="space-y-2 text-xs">
+                  <span className="font-bold block">Immutable Audit Records ({auditLogs.length})</span>
+                  {auditLogs.map(aud => (
+                    <div key={aud.id} className="p-3 rounded-xl bg-[#F5F7FB] dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-white">{aud.actor_name} — {aud.action}</span>
+                        <p className="text-slate-500">{aud.details}</p>
+                      </div>
+                      <span className="font-mono text-slate-400 text-[10px]">{new Date(aud.created_at).toLocaleTimeString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </main>
+      </div>
 
-      {/* TAB 2: LIVE ATTENDANCE FEED */}
-      {activeTab === 'attendance' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Complete School Attendance Audit Trail
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Every record is timestamped by the server and tied to an instructor & vehicle.
-              </p>
-            </div>
-            <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-              Total Recorded: {attendanceRecords.length} Sessions
-            </span>
-          </div>
+      {/* MODALS */}
+      {/* 1. Quick Add Modals */}
+      <QuickAddModals 
+        modalType={quickAddType} 
+        onClose={() => setQuickAddType(null)} 
+      />
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="px-4 py-3">Student Name & Code</th>
-                  <th className="px-4 py-3">Session Category</th>
-                  <th className="px-4 py-3">Instructor</th>
-                  <th className="px-4 py-3">Vehicle</th>
-                  <th className="px-4 py-3">Instructor Remarks</th>
-                  <th className="px-4 py-3 text-right">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/60 text-slate-300">
-                {attendanceRecords.map(att => (
-                  <tr key={att.id} className="hover:bg-slate-850/60 transition">
-                    <td className="px-4 py-3.5">
-                      <span className="font-bold text-white block">{att.student_name}</span>
-                      <span className="font-mono text-[10px] text-blue-400">{att.student_code}</span>
-                    </td>
-                    <td className="px-4 py-3.5 font-medium text-slate-200">{att.session_name}</td>
-                    <td className="px-4 py-3.5">{att.instructor_name}</td>
-                    <td className="px-4 py-3.5 font-mono text-slate-400">{att.vehicle_info || 'Assigned Car'}</td>
-                    <td className="px-4 py-3.5 italic text-slate-400">{att.remarks || '—'}</td>
-                    <td className="px-4 py-3.5 text-right font-mono text-slate-400">
-                      {new Date(att.marked_at).toLocaleString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* 2. 10-Tab Student Detail Modal */}
+      <StudentDetailModal 
+        student={selectedStudentForDetail}
+        enrollment={enrollments.find(e => e.student_id === selectedStudentForDetail?.id)}
+        attendanceRecords={attendanceRecords}
+        payments={payments}
+        licenceRecord={licenceRecords.find(l => l.student_id === selectedStudentForDetail?.id)}
+        schedules={schedules}
+        auditLogs={auditLogs}
+        school={school}
+        onClose={() => setSelectedStudentForDetail(null)}
+      />
 
-      {/* TAB 3: FINANCIALS & COLLECTIONS */}
-      {activeTab === 'finances' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <IndianRupee className="w-4 h-4 text-emerald-400" /> Financial Ledger & Revenue Reconciliation
-              </h2>
-              <p className="text-xs text-slate-400">Total Confirmed Collections: ₹{totalRevenue.toLocaleString('en-IN')}</p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="px-4 py-3">Receipt No</th>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3">Mode</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Confirmed By</th>
-                  <th className="px-4 py-3 text-right">Official Receipt</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/60 text-slate-300">
-                {payments.map(pay => (
-                  <tr key={pay.id} className="hover:bg-slate-850/60 transition">
-                    <td className="px-4 py-3.5 font-mono font-bold text-slate-300">
-                      {pay.receipt_number || 'PENDING APPROVAL'}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="font-semibold text-white block">{pay.student_name}</span>
-                      <span className="text-[10px] font-mono text-slate-500">{pay.student_code}</span>
-                    </td>
-                    <td className="px-4 py-3.5 font-bold text-emerald-400 text-sm">
-                      ₹{pay.amount.toLocaleString('en-IN')}
-                    </td>
-                    <td className="px-4 py-3.5">{pay.payment_method}</td>
-                    <td className="px-4 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        pay.status === 'Confirmed'
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                      }`}>
-                        {pay.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-400">{pay.confirmed_by || 'Awaiting Owner'}</td>
-                    <td className="px-4 py-3.5 text-right">
-                      {pay.receipt_number ? (
-                        <button
-                          onClick={() => setSelectedReceipt(pay)}
-                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 text-[11px] inline-flex items-center gap-1 font-medium transition"
-                        >
-                          <Printer className="w-3 h-3" /> View Receipt
-                        </button>
-                      ) : (
-                        <button
-                          onClick={async () => {
-                            await confirmPayment(pay.id);
-                          }}
-                          className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition"
-                        >
-                          Confirm & Issue
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: STUDENTS LIST */}
-      {activeTab === 'students' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" /> Student Master Database ({students.length})
-            </h2>
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                value={searchStudent}
-                onChange={(e) => setSearchStudent(e.target.value)}
-                placeholder="Search by code, name or phone..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Course</th>
-                  <th className="px-4 py-3">Instructor</th>
-                  <th className="px-4 py-3">Completed Sessions</th>
-                  <th className="px-4 py-3">Fee Balance</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/60 text-slate-300">
-                {students
-                  .filter(s => 
-                    s.student_code.toLowerCase().includes(searchStudent.toLowerCase()) ||
-                    s.full_name.toLowerCase().includes(searchStudent.toLowerCase())
-                  )
-                  .map(stud => {
-                    const enr = enrollments.find(e => e.student_id === stud.id);
-                    const paid = payments
-                      .filter(p => p.student_id === stud.id && p.status === 'Confirmed')
-                      .reduce((sum, p) => sum + p.amount, 0);
-                    const due = enr ? Math.max(0, enr.agreed_fee - paid) : 0;
-
-                    return (
-                      <tr key={stud.id} className="hover:bg-slate-850/60 transition">
-                        <td className="px-4 py-3.5 font-mono font-bold text-purple-400">{stud.student_code}</td>
-                        <td className="px-4 py-3.5">
-                          <span className="font-bold text-white block">{stud.full_name}</span>
-                          <span className="text-[10px] text-slate-500">{stud.phone}</span>
-                        </td>
-                        <td className="px-4 py-3.5">{stud.enrolled_course_name}</td>
-                        <td className="px-4 py-3.5">{stud.assigned_instructor_name || 'Unassigned'}</td>
-                        <td className="px-4 py-3.5 font-bold text-emerald-400">
-                          {enr ? `${enr.completed_sessions} / ${enr.total_sessions}` : '0'}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {due > 0 ? (
-                            <span className="text-amber-400 font-bold">₹{due.toLocaleString('en-IN')} Due</span>
-                          ) : (
-                            <span className="text-emerald-400 font-bold">Cleared</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                            {stud.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: INSTRUCTORS & PERFORMANCE */}
-      {activeTab === 'instructors' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Award className="w-4 h-4 text-emerald-400" /> Instructor Roster & Daily Performance
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {instructors.map(ins => (
-              <div key={ins.id} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm">
-                      {ins.full_name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-sm">{ins.full_name}</h4>
-                      <span className="font-mono text-xs text-emerald-400 font-semibold">{ins.instructor_code}</span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
-                    {ins.employment_status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-800/80 text-slate-300">
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Assigned Car:</span>
-                    <span>{ins.assigned_vehicle_name || 'None'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Experience:</span>
-                    <span>{ins.experience_years} Years</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Active Students:</span>
-                    <span className="font-bold text-white">{ins.active_students_count} Learners</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Today's Sessions:</span>
-                    <span className="font-bold text-emerald-400">{ins.today_sessions_count} Classes Completed</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: RTO LICENCES */}
-      {activeTab === 'licences' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <FileCheck2 className="w-4 h-4 text-blue-400" /> RTO Learning & Driving Licence Pipeline
-          </h2>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Licence Category</th>
-                  <th className="px-4 py-3">Current RTO Stage</th>
-                  <th className="px-4 py-3">Test Date & Center</th>
-                  <th className="px-4 py-3 text-right">Result</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/60 text-slate-300">
-                {licenceRecords.map(lic => (
-                  <tr key={lic.id} className="hover:bg-slate-850/60 transition">
-                    <td className="px-4 py-3.5">
-                      <span className="font-bold text-white block">{lic.student_name}</span>
-                      <span className="font-mono text-[10px] text-blue-400">{lic.student_code}</span>
-                    </td>
-                    <td className="px-4 py-3.5 font-medium">{lic.licence_type}</td>
-                    <td className="px-4 py-3.5">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30">
-                        {lic.ll_status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="font-mono text-white block">{lic.test_date || 'Awaiting slot'}</span>
-                      <span className="text-[10px] text-slate-500">{lic.rto_name}</span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-bold">
-                      {lic.test_result === 'Passed' ? (
-                        <span className="text-emerald-400">PASSED</span>
-                      ) : lic.test_result === 'Failed' ? (
-                        <span className="text-rose-400">FAILED</span>
-                      ) : (
-                        <span className="text-slate-500">PENDING TEST</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 7: FLEET & VEHICLES */}
-      {activeTab === 'fleet' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Car className="w-4 h-4 text-amber-400" /> Academy Fleet & Dual-Control Cars
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {vehicles.map(v => (
-              <div key={v.id} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-white text-sm">{v.brand} {v.model}</h4>
-                    <span className="font-mono text-xs text-amber-400 font-bold">{v.registration_number}</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    v.status === 'Assigned' 
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                      : 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                  }`}>
-                    {v.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-800 text-slate-400">
-                  <div>
-                    <span>Dual Control: </span>
-                    <strong className="text-white">{v.is_dual_control ? 'Yes (Govt RTO Approved)' : 'No'}</strong>
-                  </div>
-                  <div>
-                    <span>Driver Assigned: </span>
-                    <strong className="text-white">{v.assigned_instructor_name || 'None'}</strong>
-                  </div>
-                  <div>
-                    <span>Insurance Expiry: </span>
-                    <strong className="text-slate-300 font-mono">{v.insurance_expiry || '—'}</strong>
-                  </div>
-                  <div>
-                    <span>PUC Expiry: </span>
-                    <strong className="text-amber-400 font-mono">{v.puc_expiry || '—'}</strong>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 8: COURSES & CURRICULUM */}
-      {activeTab === 'courses' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-blue-400" /> Driving Courses & Session Category Templates
-          </h2>
-
-          <div className="grid grid-cols-1 gap-6">
-            {courses.map(c => (
-              <div key={c.id} className="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 uppercase">
-                      Category {c.category}
-                    </span>
-                    <h3 className="text-lg font-bold text-white mt-1">{c.name}</h3>
-                    <p className="text-xs text-slate-400">{c.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xl font-bold text-emerald-400">₹{c.price.toLocaleString('en-IN')}</span>
-                    <span className="block text-[11px] text-slate-500">{c.duration_days} Days Duration</span>
-                  </div>
-                </div>
-
-                {c.templates && c.templates.length > 0 && (
-                  <div className="space-y-2 pt-3 border-t border-slate-800">
-                    <span className="text-xs font-semibold text-slate-300 block">
-                      Allocated Session Modules ({c.templates.reduce((acc, t) => acc + t.total_sessions, 0)} Total Driving Classes):
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {c.templates.map(t => (
-                        <div key={t.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 text-xs flex items-center justify-between">
-                          <span className="truncate max-w-[170px] text-slate-300">{t.session_name}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 font-bold text-emerald-400 text-[10px]">
-                            {t.total_sessions} Class{t.total_sessions > 1 ? 'es' : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 9: IMMUTABLE AUDIT LOGS */}
-      {activeTab === 'audit' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <History className="w-4 h-4 text-amber-400" /> Immutable System Audit Trail
-              </h2>
-              <p className="text-xs text-slate-400">Logs every attendance mark, fee receipt, and student mutation.</p>
-            </div>
-            <span className="text-xs font-mono text-slate-400">{auditLogs.length} Events Logged</span>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="px-4 py-3">Timestamp</th>
-                  <th className="px-4 py-3">Actor</th>
-                  <th className="px-4 py-3">Action Type</th>
-                  <th className="px-4 py-3">Entity</th>
-                  <th className="px-4 py-3">Audit Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/60 text-slate-300">
-                {auditLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-slate-850/60 transition">
-                    <td className="px-4 py-3.5 font-mono text-slate-400">
-                      {new Date(log.created_at).toLocaleString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      })}
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold text-white">{log.actor_name}</td>
-                    <td className="px-4 py-3.5">
-                      <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-400 font-mono">{log.entity_type}</td>
-                    <td className="px-4 py-3.5 text-slate-300">{log.details}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Official Receipt Modal */}
+      {/* 3. Official Receipt Modal */}
       <ReceiptModal 
         payment={selectedReceipt} 
         school={school} 

@@ -382,6 +382,86 @@ export const mockEnrollments: Enrollment[] = [
       { id: 'sa-p9', enrollment_id: 'enr-priya-02', session_template_id: 't9', session_name_snapshot: 'Highway Speed & Overtaking Protocol', allocated_count: 1, completed_count: 0, sort_order: 9 },
       { id: 'sa-p10', enrollment_id: 'enr-priya-02', session_template_id: 't10', session_name_snapshot: 'Practical RTO Track Mock Test & Signage', allocated_count: 1, completed_count: 0, sort_order: 10 }
     ]
+  },
+  {
+    id: 'enr-amit-03',
+    school_id: 'school-apex-001',
+    student_id: 'stud-amit-03',
+    student_code: 'DS-2026-00103',
+    student_name: 'Amit Deshmukh',
+    course_id: 'course-combo-executive',
+    course_name: 'Executive Combo 4W + 2W Comprehensive (25 Sessions)',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    assigned_vehicle_id: 'veh-i10-02',
+    vehicle_registration: 'MH-12-CD-5678',
+    start_date: '2026-09-16',
+    expected_end_date: '2026-10-30',
+    agreed_fee: 11000,
+    status: 'Completed',
+    total_sessions: 25,
+    completed_sessions: 25,
+    session_allocations: [
+      { id: 'sa-a1', enrollment_id: 'enr-amit-03', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 3, completed_count: 3, sort_order: 1 },
+      { id: 'sa-a2', enrollment_id: 'enr-amit-03', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 4, completed_count: 4, sort_order: 2 },
+      { id: 'sa-a3', enrollment_id: 'enr-amit-03', session_template_id: 't3', session_name_snapshot: 'Straight Road & Lane Discipline', allocated_count: 4, completed_count: 4, sort_order: 3 },
+      { id: 'sa-a4', enrollment_id: 'enr-amit-03', session_template_id: 't4', session_name_snapshot: 'Dense Traffic & Junction Negotiation', allocated_count: 4, completed_count: 4, sort_order: 4 },
+      { id: 'sa-a5', enrollment_id: 'enr-amit-03', session_template_id: 't5', session_name_snapshot: 'Reverse Driving & S-Track Navigation', allocated_count: 3, completed_count: 3, sort_order: 5 },
+      { id: 'sa-a6', enrollment_id: 'enr-amit-03', session_template_id: 't6', session_name_snapshot: 'Perpendicular & Box Parking', allocated_count: 3, completed_count: 3, sort_order: 6 },
+      { id: 'sa-a7', enrollment_id: 'enr-amit-03', session_template_id: 't7', session_name_snapshot: 'Parallel Parking & Hill Starts', allocated_count: 2, completed_count: 2, sort_order: 7 },
+      { id: 'sa-a8', enrollment_id: 'enr-amit-03', session_template_id: 't8', session_name_snapshot: 'Two-Wheeler Balance & 8-Track Test Prep', allocated_count: 2, completed_count: 2, sort_order: 8 }
+    ]
+  },
+  {
+    id: 'enr-neha-04',
+    school_id: 'school-apex-001',
+    student_id: 'stud-neha-04',
+    student_code: 'DS-2026-00104',
+    student_name: 'Neha Joshi',
+    course_id: 'course-2w-expert',
+    course_name: 'Two Wheeler Professional Riding (10 Sessions)',
+    branch_id: 'branch-kothrud',
+    assigned_instructor_id: 'ins-suresh-02',
+    assigned_instructor_name: 'Suresh Patil',
+    assigned_vehicle_id: 'veh-activa-04',
+    vehicle_registration: 'MH-12-EF-9012',
+    start_date: '2026-10-19',
+    expected_end_date: '2026-11-05',
+    agreed_fee: 3500,
+    status: 'Active',
+    total_sessions: 10,
+    completed_sessions: 8,
+    session_allocations: [
+      { id: 'sa-n1', enrollment_id: 'enr-neha-04', session_template_id: 't20', session_name_snapshot: 'Balance & Low Speed Maneuvers', allocated_count: 3, completed_count: 3, sort_order: 1 },
+      { id: 'sa-n2', enrollment_id: 'enr-neha-04', session_template_id: 't21', session_name_snapshot: 'City Road & Traffic Handling', allocated_count: 3, completed_count: 3, sort_order: 2 },
+      { id: 'sa-n3', enrollment_id: 'enr-neha-04', session_template_id: 't22', session_name_snapshot: 'Emergency Braking & Turn Indicators', allocated_count: 2, completed_count: 2, sort_order: 3 },
+      { id: 'sa-n4', enrollment_id: 'enr-neha-04', session_template_id: 't23', session_name_snapshot: 'RTO 8-Track Mock Test Preparation', allocated_count: 2, completed_count: 0, sort_order: 4 }
+    ]
+  },
+  {
+    id: 'enr-rohit-05',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rohit-05',
+    student_code: 'DS-2026-00105',
+    student_name: 'Rohit Mane',
+    course_id: 'course-4w-complete',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    assigned_vehicle_id: 'veh-swift-01',
+    vehicle_registration: 'MH-12-AB-1234',
+    start_date: '2026-11-12',
+    expected_end_date: '2026-12-15',
+    agreed_fee: 8500,
+    status: 'Pending',
+    total_sessions: 20,
+    completed_sessions: 0,
+    session_allocations: [
+      { id: 'sa-rm1', enrollment_id: 'enr-rohit-05', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 0, sort_order: 1 },
+      { id: 'sa-rm2', enrollment_id: 'enr-rohit-05', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 3, completed_count: 0, sort_order: 2 }
+    ]
   }
 ];
 
@@ -527,6 +607,57 @@ export const mockLicenceRecords: LicenceRecord[] = [
     ll_valid_till: '2027-04-24',
     rto_name: 'MH-12 Pune (Alandi Track)',
     remarks: 'Learner licence active. Practical training underway (mandatory 30 days window).'
+  },
+  {
+    id: 'lic-amit-03',
+    school_id: 'school-apex-001',
+    student_id: 'stud-amit-03',
+    student_name: 'Amit Deshmukh',
+    student_code: 'DS-2026-00103',
+    licence_type: 'MCWG + LMV (Motorcycle + Car)',
+    ll_application_date: '2026-09-18',
+    ll_reference: 'MH12/LL/2026/081920',
+    ll_status: 'Licence Issued',
+    ll_issue_date: '2026-09-22',
+    ll_valid_till: '2027-03-21',
+    dl_application_date: '2026-10-25',
+    dl_reference: 'MH12/DL/2026/091823',
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    test_date: '2026-11-04',
+    test_result: 'Passed',
+    licence_number: 'MH-12-2026-0081923',
+    issue_date: '2026-11-06',
+    remarks: 'Passed 8-track and H-track with 0 negative points. Smart Card dispatched via Speed Post.'
+  },
+  {
+    id: 'lic-neha-04',
+    school_id: 'school-apex-001',
+    student_id: 'stud-neha-04',
+    student_name: 'Neha Joshi',
+    student_code: 'DS-2026-00104',
+    licence_type: 'MCWG (Motorcycle with Gear)',
+    ll_application_date: '2026-10-20',
+    ll_reference: 'MH12/LL/2026/119283',
+    ll_status: 'DL Application Submitted',
+    ll_issue_date: '2026-10-23',
+    ll_valid_till: '2027-04-22',
+    dl_application_date: '2026-11-08',
+    dl_reference: 'MH12/DL/2026/114920',
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    test_date: '2026-11-28',
+    test_result: 'Pending',
+    remarks: 'Slot booked for 8-track two wheeler practical assessment.'
+  },
+  {
+    id: 'lic-rohit-05',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rohit-05',
+    student_name: 'Rohit Mane',
+    student_code: 'DS-2026-00105',
+    licence_type: 'LMV (Car)',
+    ll_status: 'Documents Pending',
+    rto_name: 'MH-12 Pune (Alandi Track)',
+    remarks: 'Awaiting medical fitness Form 1A submission at counter before filing online LL application.'
   }
 ];
 
@@ -593,5 +724,270 @@ export const mockAuditLogs: AuditLog[] = [
     entity_id: 'stud-rohit-05',
     details: 'Registered student Rohit Mane (DS-2026-00105) for 4W Complete Mastery',
     created_at: '2026-11-08T10:00:00+05:30'
+  }
+];
+
+import { StaffMember, NotificationItem } from '@/types';
+
+export const mockStaffMembers: StaffMember[] = [
+  {
+    id: 'stf-sunita-01',
+    school_id: 'school-apex-001',
+    user_id: 'usr-staff-sunita',
+    employee_code: 'STF-2026-01',
+    full_name: 'Sunita Patil',
+    phone: '+91 98220 55443',
+    email: 'sunita.staff@apexdriving.in',
+    role_title: 'Senior Admissions & Desk Coordinator',
+    is_active: true,
+    permissions: {
+      can_admit_students: true,
+      can_manage_fees: true,
+      can_confirm_payments: true,
+      can_assign_instructors: true,
+      can_manage_licences: true,
+      can_manage_vehicles: false,
+      can_view_reports: true,
+    },
+    last_login: '2026-11-10T09:15:00+05:30',
+    created_at: '2024-06-01T00:00:00Z',
+  },
+  {
+    id: 'stf-rohan-02',
+    school_id: 'school-apex-001',
+    user_id: 'usr-staff-rohan',
+    employee_code: 'STF-2026-02',
+    full_name: 'Rohan Gaikwad',
+    phone: '+91 98220 77665',
+    email: 'rohan.desk@apexdriving.in',
+    role_title: 'Front Desk & Schedules Executive',
+    is_active: true,
+    permissions: {
+      can_admit_students: true,
+      can_manage_fees: false,
+      can_confirm_payments: false,
+      can_assign_instructors: true,
+      can_manage_licences: true,
+      can_manage_vehicles: true,
+      can_view_reports: false,
+    },
+    last_login: '2026-11-09T17:45:00+05:30',
+    created_at: '2025-01-15T00:00:00Z',
+  }
+];
+
+export const mockNotifications: NotificationItem[] = [
+  {
+    id: 'notif-01',
+    school_id: 'school-apex-001',
+    title: 'New Student Admission',
+    message: 'Rohit Mane (DS-2026-00105) enrolled in 4W Complete Mastery Course.',
+    category: 'admission',
+    is_read: false,
+    created_at: '2026-11-08T10:00:00+05:30'
+  },
+  {
+    id: 'notif-02',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    title: 'Fee Payment Pending Confirmation',
+    message: 'Cash installment of ₹3,500 received at desk counter. Awaiting final owner confirmation.',
+    category: 'payment',
+    is_read: false,
+    created_at: '2026-11-10T11:00:00+05:30',
+    link_url: '/student?tab=fees'
+  },
+  {
+    id: 'notif-03',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    title: 'Class Scheduled Today: Parallel Parking',
+    message: 'Your driving session on Parallel Parking Between Vehicles is scheduled today at 3:00 PM with Vikram Shinde.',
+    category: 'schedule',
+    is_read: false,
+    created_at: '2026-11-10T08:00:00+05:30',
+    link_url: '/student?tab=schedule'
+  },
+  {
+    id: 'notif-04',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    title: 'Attendance Marked — Hill Start & Slope Balance',
+    message: 'Instructor Vikram Shinde logged your attendance for Session 13. Good clutch bite point control!',
+    category: 'attendance',
+    is_read: true,
+    created_at: '2026-11-09T08:50:00+05:30',
+    link_url: '/student?tab=attendance'
+  },
+  {
+    id: 'notif-05',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    title: 'RTO DL Practical Test Slot Confirmed',
+    message: 'Pune RTO (Alandi Track) has confirmed your DL Driving Test for Friday, 20 Nov 2026 at 10:30 AM.',
+    category: 'licence',
+    is_read: true,
+    created_at: '2026-11-07T14:30:00+05:30',
+    link_url: '/student?tab=licence'
+  },
+  {
+    id: 'notif-06',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    title: 'Payment Confirmed: Receipt #RCP-2026-00042',
+    message: 'Admission fee payment of ₹5,000 via UPI is verified. Official receipt generated.',
+    category: 'payment',
+    is_read: true,
+    created_at: '2026-10-05T10:16:00+05:30',
+    link_url: '/student?tab=fees'
+  },
+  {
+    id: 'notif-07',
+    school_id: 'school-apex-001',
+    student_id: 'stud-priya-02',
+    title: 'Class Scheduled: Straight Road & Lane Discipline',
+    message: 'Your driving session is scheduled for today at 4:30 PM with instructor Vikram Shinde.',
+    category: 'schedule',
+    is_read: false,
+    created_at: '2026-11-10T09:00:00+05:30',
+    link_url: '/student?tab=schedule'
+  },
+  {
+    id: 'notif-08',
+    school_id: 'school-apex-001',
+    student_id: 'stud-priya-02',
+    title: 'Learner Licence Approved',
+    message: 'Your Learner Licence (Ref: MH12/LL/2026/110291) has been approved by Pune RTO and is valid till Apr 2027.',
+    category: 'licence',
+    is_read: true,
+    created_at: '2026-10-25T12:00:00+05:30',
+    link_url: '/student?tab=licence'
+  }
+];
+
+import { StudentDocument, SupportTicket } from '@/types';
+
+export const mockStudentDocuments: StudentDocument[] = [
+  {
+    id: 'doc-001',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    document_type: 'Aadhaar',
+    document_name: 'Aadhaar_Card_Rahul_Sharma.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-rahul-01/aadhaar.pdf',
+    file_size: '1.4 MB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-05T09:40:00+05:30',
+    verified_at: '2026-10-05T10:00:00+05:30',
+    notes: 'Verified against UIDAI offline XML'
+  },
+  {
+    id: 'doc-002',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    document_type: 'Form_1A_Medical',
+    document_name: 'Form_1A_Medical_Certificate_Certified.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-rahul-01/form1a.pdf',
+    file_size: '850 KB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-05T09:45:00+05:30',
+    verified_at: '2026-10-05T10:15:00+05:30',
+    notes: 'Signed by Dr. A. V. Kulkarni (Reg #MMC-2011/4891)'
+  },
+  {
+    id: 'doc-003',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    document_type: 'Passport_Photo',
+    document_name: 'Student_Passport_Photo.jpg',
+    file_url: 'https://storage.supabase.co/student-documents/stud-rahul-01/photo.jpg',
+    file_size: '320 KB',
+    mime_type: 'image/jpeg',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-05T09:35:00+05:30',
+    verified_at: '2026-10-05T09:50:00+05:30'
+  },
+  {
+    id: 'doc-004',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    document_type: 'Learner_Licence',
+    document_name: 'RTO_Learner_Licence_MH12LL099182.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-rahul-01/ll_copy.pdf',
+    file_size: '1.8 MB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-12T16:20:00+05:30',
+    verified_at: '2026-10-12T16:30:00+05:30',
+    notes: 'Official Sarathi Parivahan LL PDF with digital signature'
+  },
+  {
+    id: 'doc-005',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    document_type: 'Payment_Receipt',
+    document_name: 'Admission_Fee_Receipt_RCP-2026-00042.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-rahul-01/rcp_00042.pdf',
+    file_size: '420 KB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-05T10:16:00+05:30',
+    verified_at: '2026-10-05T10:16:00+05:30'
+  },
+  {
+    id: 'doc-006',
+    school_id: 'school-apex-001',
+    student_id: 'stud-priya-02',
+    document_type: 'Aadhaar',
+    document_name: 'Aadhaar_Priya_Kulkarni.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-priya-02/aadhaar.pdf',
+    file_size: '1.2 MB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-20T11:05:00+05:30',
+    verified_at: '2026-10-20T11:15:00+05:30'
+  },
+  {
+    id: 'doc-007',
+    school_id: 'school-apex-001',
+    student_id: 'stud-priya-02',
+    document_type: 'Learner_Licence',
+    document_name: 'Learner_Licence_MH12LL110291.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-priya-02/ll.pdf',
+    file_size: '1.6 MB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-25T12:10:00+05:30',
+    verified_at: '2026-10-25T12:15:00+05:30'
+  },
+  {
+    id: 'doc-008',
+    school_id: 'school-apex-001',
+    student_id: 'stud-priya-02',
+    document_type: 'Payment_Receipt',
+    document_name: 'Full_Fee_Receipt_RCP-2026-00043.pdf',
+    file_url: 'https://storage.supabase.co/student-documents/stud-priya-02/receipt.pdf',
+    file_size: '410 KB',
+    mime_type: 'application/pdf',
+    verification_status: 'Verified',
+    uploaded_at: '2026-10-20T11:35:00+05:30',
+    verified_at: '2026-10-20T11:35:00+05:30'
+  }
+];
+
+export const mockSupportTickets: SupportTicket[] = [
+  {
+    id: 'tkt-01',
+    school_id: 'school-apex-001',
+    student_id: 'stud-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    category: 'scheduling',
+    subject: 'Request morning slot preference for highway drive',
+    message: 'Could we schedule the highway speed session on Saturday between 7 AM and 8 AM to avoid highway traffic?',
+    status: 'In_Progress',
+    created_at: '2026-11-08T15:30:00+05:30'
   }
 ];
