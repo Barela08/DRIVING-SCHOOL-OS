@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
@@ -13,12 +13,9 @@ import {
   Eye,
   EyeOff,
   User,
-  ShieldCheck,
   ShieldAlert,
   X,
-  KeyRound,
-  RefreshCw,
-  HelpCircle
+  KeyRound
 } from 'lucide-react';
 
 function LoginForm() {
@@ -50,19 +47,11 @@ function LoginForm() {
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [recoveryError, setRecoveryError] = useState('');
 
-  // Handle route-guard redirect alerts
+  // Handle route-guard redirect alerts with neutral messaging
   useEffect(() => {
     const errorParam = searchParams.get('error');
-    if (errorParam === 'unauthorized_owner') {
-      setError('Owner authorization required. Please authenticate with your authorized account.');
-    } else if (errorParam === 'unauthorized_staff') {
-      setError('Staff authorization required to access desk operations.');
-    } else if (errorParam === 'unauthorized_instructor') {
-      setError('Instructor credentials required to access the driving instructor console.');
-    } else if (errorParam === 'unauthorized_student') {
-      setError('Student authorization required. Please log in with your Student ID.');
-    } else if (errorParam === 'session_tampered') {
-      setError('Security warning: Session signature mismatch detected. Please re-authenticate.');
+    if (errorParam) {
+      setError('Authorization required. Please sign in to access this area.');
     }
   }, [searchParams]);
 
@@ -86,15 +75,15 @@ function LoginForm() {
     if (lockoutSeconds > 0) return;
 
     if (!identifier.trim()) {
-      setError('Please enter your User ID, Registered Email, Student Code, or Phone.');
+      setError('Please enter your User ID.');
       return;
     }
     if (!passwordOrPin) {
-      setError('Please enter your Password or secure PIN.');
+      setError('Please enter your Password or PIN.');
       return;
     }
     if (requireCaptcha && !captchaAnswer.trim()) {
-      setError('Please solve the security challenge before submitting.');
+      setError('Please answer the security verification.');
       return;
     }
 
@@ -108,26 +97,26 @@ function LoginForm() {
       });
 
       if (res.success && res.redirectTo) {
-        addToast('Credentials verified. Redirecting to your academy portal...', 'success');
+        addToast('Signed in successfully.', 'success');
         router.push(res.redirectTo);
       } else {
         // Handle rate limiting / lockout / captcha signals
         if (res.isLockedOut && res.lockoutRemainingSeconds) {
           setLockoutSeconds(res.lockoutRemainingSeconds);
-          setError('Too many attempts. Please wait before trying again or use account recovery.');
+          setError('Too many attempts. Please wait before trying again.');
         } else if (res.requireCaptcha && res.captchaChallenge) {
           setRequireCaptcha(true);
           setCaptchaQuestion(res.captchaChallenge.question);
           setCaptchaToken(res.captchaChallenge.token);
           setCaptchaAnswer('');
-          setError(res.error || 'Security verification required. Please solve the security check.');
+          setError('Security check required. Please solve the problem below.');
         } else {
-          setError(res.error || 'Invalid login details. Please check your credentials and try again.');
+          setError(res.error || 'Invalid credentials. Please check your details and try again.');
         }
         setLoading(false);
       }
     } catch (err: any) {
-      setError(err?.message || 'Login failed. Please check network connection.');
+      setError(err?.message || 'Unable to sign in. Please check your connection.');
       setLoading(false);
     }
   };
@@ -149,12 +138,12 @@ function LoginForm() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setRecoveryMessage(data.message || 'If an account matches those details, recovery instructions have been dispatched.');
+        setRecoveryMessage('If an account is associated with this User ID, recovery instructions have been sent.');
       } else {
-        setRecoveryError(data.error || 'Recovery request could not be processed. Please try again.');
+        setRecoveryError(data.error || 'Unable to process recovery request.');
       }
-    } catch (err: any) {
-      setRecoveryError('Network error while processing password recovery.');
+    } catch {
+      setRecoveryError('Network error while processing request.');
     } finally {
       setRecoveryLoading(false);
     }
@@ -187,7 +176,7 @@ function LoginForm() {
               Academy Portal Login
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Sign in with your registered credentials. Your dashboard will be automatically determined.
+              Please enter your credentials to access your account.
             </p>
           </div>
         </div>
@@ -201,16 +190,16 @@ function LoginForm() {
                 {error}
                 {lockoutSeconds > 0 && (
                   <div className="mt-1 font-mono font-bold text-red-200">
-                    Lockout remaining: {Math.floor(lockoutSeconds / 60)}m {lockoutSeconds % 60}s
+                    Remaining time: {Math.floor(lockoutSeconds / 60)}m {lockoutSeconds % 60}s
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Unified Login Form — ZERO role selectors or dropdowns */}
+          {/* Minimal, Neutral Form (Module 7) */}
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Field 1: User ID / Registered ID / Email / Mobile Number */}
+            {/* Field 1: User ID / Registered ID */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300 block">
                 User ID / Registered ID
@@ -223,16 +212,13 @@ function LoginForm() {
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Enter User ID, Student Code, Email, or Mobile"
+                  placeholder="Enter User ID, Email or Phone"
                   required
                   autoComplete="username"
                   disabled={lockoutSeconds > 0}
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#0B1728] border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white placeholder-slate-500 text-xs transition disabled:opacity-50"
                 />
               </div>
-              <span className="text-[10px] text-slate-400 block pl-1">
-                Accepted: Email address, Student Code, Staff Code, Instructor ID, or Mobile number.
-              </span>
             </div>
 
             {/* Field 2: Password or Secure PIN */}
@@ -262,7 +248,7 @@ function LoginForm() {
                   type={showPassword ? 'text' : 'password'}
                   value={passwordOrPin}
                   onChange={(e) => setPasswordOrPin(e.target.value)}
-                  placeholder="Enter your account password or PIN"
+                  placeholder="Enter password or PIN"
                   required
                   autoComplete="current-password"
                   disabled={lockoutSeconds > 0}
@@ -278,7 +264,7 @@ function LoginForm() {
               </div>
             </div>
 
-            {/* Security CAPTCHA Challenge (Triggered only when repeated failures occur) */}
+            {/* Security Check (if triggered by rate limiter) */}
             {requireCaptcha && (
               <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2 animate-fadeIn">
                 <div className="flex items-center justify-between font-bold">
@@ -298,7 +284,7 @@ function LoginForm() {
               </div>
             )}
 
-            {/* Device Security & Remember */}
+            {/* Remember Me */}
             <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -309,9 +295,6 @@ function LoginForm() {
                 />
                 <span>Remember this device</span>
               </label>
-              <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Server Verified
-              </span>
             </div>
 
             {/* Field 3: Login Button */}
@@ -323,7 +306,7 @@ function LoginForm() {
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span>Verifying Credentials & Role...</span>
+                  <span>Signing In...</span>
                 </div>
               ) : lockoutSeconds > 0 ? (
                 <span>Locked Out ({lockoutSeconds}s)</span>
@@ -336,31 +319,79 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Reference Notice (Passive informational guide, strictly without role selection buttons) */}
-          <div className="pt-4 border-t border-slate-800/80">
-            <div className="rounded-2xl bg-slate-900/60 border border-slate-800 p-3 text-[11px] text-slate-400 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-slate-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                <span>Automatic Role Resolution Enabled</span>
-              </div>
-              <p className="text-[10px] leading-relaxed text-slate-400">
-                You do not need to choose an account type. Model Driving Academy automatically routes you to your authorized dashboard upon verifying your credentials.
-              </p>
+          {/* Quick Demo Credentials for Fast Testing */}
+          <div className="pt-2 border-t border-slate-800 space-y-2.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block text-center">
+              Quick Test Credentials
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('MDA-2026-00125');
+                  setPasswordOrPin('MDA-2026-00125');
+                  setError('');
+                }}
+                className="p-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold transition text-left"
+                title="Student with initial temporary password equal to Student ID"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="truncate">New Student (1st Login)</span>
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1 rounded">1st Login</span>
+                </div>
+                <div className="font-mono text-[10px] text-slate-400 mt-0.5">MDA-2026-00125</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('DS-2026-001');
+                  setPasswordOrPin('pass123');
+                  setError('');
+                }}
+                className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold transition text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="truncate">Active Student</span>
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1 rounded">Active</span>
+                </div>
+                <div className="font-mono text-[10px] text-slate-400 mt-0.5">DS-2026-001</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('owner@modeldriving.in');
+                  setPasswordOrPin('••••••••');
+                  setError('');
+                }}
+                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-300 font-bold transition text-left"
+              >
+                <div className="truncate">Academy Owner</div>
+                <div className="font-mono text-[10px] text-slate-400 mt-0.5">owner@modeldriving.in</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('ins-2026-01');
+                  setPasswordOrPin('1234');
+                  setError('');
+                }}
+                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-300 font-bold transition text-left"
+              >
+                <div className="truncate">Instructor Vikram</div>
+                <div className="font-mono text-[10px] text-slate-400 mt-0.5">ins-2026-01</div>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Footer links: Field 5 (Student Admission / Registration Link) */}
+        {/* Back Link */}
         <div className="mt-6 text-center text-xs text-slate-400 space-y-2">
           <div>
-            Need to register as a new driving student?{' '}
-            <Link href="/admission" className="font-bold text-blue-400 hover:text-blue-300 transition">
-              Student Admission & Registration
-            </Link>
-          </div>
-          <div>
             <Link href="/" className="hover:text-slate-300 transition">
-              ← Return to Academy Website
+              ← Return to Home
             </Link>
           </div>
         </div>
@@ -389,14 +420,14 @@ function LoginForm() {
                 Account Recovery & PIN Reset
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Enter your registered Email, Student ID, or Mobile number to receive authorization recovery instructions.
+                Enter your registered User ID to receive account recovery instructions.
               </p>
             </div>
 
             {recoveryMessage ? (
               <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs space-y-3 text-center">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                <h4 className="font-bold text-sm text-white">Recovery Dispatched</h4>
+                <h4 className="font-bold text-sm text-white">Recovery Instructions Sent</h4>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
                   {recoveryMessage}
                 </p>
@@ -405,7 +436,7 @@ function LoginForm() {
                   onClick={() => setIsRecoveryOpen(false)}
                   className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
                 >
-                  Return to Login
+                  Return to Sign In
                 </button>
               </div>
             ) : (
@@ -419,38 +450,24 @@ function LoginForm() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-300 block">
-                    Registered Identifier
+                    Registered User ID
                   </label>
                   <input
                     type="text"
                     value={recoveryId}
                     onChange={(e) => setRecoveryId(e.target.value)}
-                    placeholder="Enter email, student code, or phone"
+                    placeholder="Enter User ID"
                     required
                     className="w-full px-4 py-3 rounded-2xl bg-[#0B1728] border border-slate-700 text-white placeholder-slate-500 text-xs focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-800/60 text-[11px] text-slate-400 border border-slate-700 flex items-start gap-2">
-                  <HelpCircle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                  <span>
-                    Students can also visit the Model Driving Academy front desk or call <strong className="text-white">+91 98220 99887</strong> for PIN assistance.
-                  </span>
-                </div>
-
                 <button
                   type="submit"
                   disabled={recoveryLoading}
-                  className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-lg shadow-blue-600/30"
                 >
-                  {recoveryLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Processing Request...</span>
-                    </>
-                  ) : (
-                    <span>Send Recovery Instructions</span>
-                  )}
+                  {recoveryLoading ? 'Processing...' : 'Send Recovery Instructions'}
                 </button>
               </form>
             )}
@@ -463,8 +480,12 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <React.Suspense fallback={<div className="min-h-screen bg-[#0B1728] flex items-center justify-center text-slate-400 text-xs">Loading Academy Portal...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0B1728] flex items-center justify-center text-slate-400 text-xs">
+        Loading...
+      </div>
+    }>
       <LoginForm />
-    </React.Suspense>
+    </Suspense>
   );
 }

@@ -16,7 +16,10 @@ import {
   CourseCertificate,
   CertificateTemplate,
   CertificateFeedback,
-  CertificateDownloadLog
+  CertificateDownloadLog,
+  TimeSlot,
+  RescheduleRequest,
+  StudentSkillAssessment
 } from '@/types';
 import { DEFAULT_CERTIFICATE_TEMPLATE } from '@/lib/defaultTemplate';
 
@@ -32,11 +35,132 @@ export const mockLLReminderSettings: LLReminderSettings = {
   updated_by: 'Owner Admin'
 };
 
+export const mockTimeSlots: TimeSlot[] = [
+  {
+    id: 'slot-06-07',
+    school_id: 'school-model-001',
+    slot_label: '06:00 AM – 07:00 AM',
+    start_time: '06:00',
+    end_time: '07:00',
+    period: 'Morning',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-vikram-01',
+    default_vehicle_id: 'veh-swift-01',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-07-08',
+    school_id: 'school-model-001',
+    slot_label: '07:00 AM – 08:00 AM',
+    start_time: '07:00',
+    end_time: '08:00',
+    period: 'Morning',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-vikram-01',
+    default_vehicle_id: 'veh-swift-01',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-08-09',
+    school_id: 'school-model-001',
+    slot_label: '08:00 AM – 09:00 AM',
+    start_time: '08:00',
+    end_time: '09:00',
+    period: 'Morning',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-suresh-02',
+    default_vehicle_id: 'veh-i10-02',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-09-10',
+    school_id: 'school-model-001',
+    slot_label: '09:00 AM – 10:00 AM',
+    start_time: '09:00',
+    end_time: '10:00',
+    period: 'Morning',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-suresh-02',
+    default_vehicle_id: 'veh-i10-02',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-10-11',
+    school_id: 'school-model-001',
+    slot_label: '10:00 AM – 11:00 AM',
+    start_time: '10:00',
+    end_time: '11:00',
+    period: 'Morning',
+    max_capacity: 3,
+    is_active: true,
+    default_instructor_id: 'ins-anita-03',
+    default_vehicle_id: 'veh-nexon-03',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-16-17',
+    school_id: 'school-model-001',
+    slot_label: '04:00 PM – 05:00 PM',
+    start_time: '16:00',
+    end_time: '17:00',
+    period: 'Evening',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-vikram-01',
+    default_vehicle_id: 'veh-swift-01',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-17-18',
+    school_id: 'school-model-001',
+    slot_label: '05:00 PM – 06:00 PM',
+    start_time: '17:00',
+    end_time: '18:00',
+    period: 'Evening',
+    max_capacity: 4,
+    is_active: true,
+    default_instructor_id: 'ins-vikram-01',
+    default_vehicle_id: 'veh-swift-01',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-18-19',
+    school_id: 'school-model-001',
+    slot_label: '06:00 PM – 07:00 PM',
+    start_time: '18:00',
+    end_time: '19:00',
+    period: 'Evening',
+    max_capacity: 3,
+    is_active: true,
+    default_instructor_id: 'ins-anita-03',
+    default_vehicle_id: 'veh-nexon-03',
+    created_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'slot-19-20',
+    school_id: 'school-model-001',
+    slot_label: '07:00 PM – 08:00 PM',
+    start_time: '19:00',
+    end_time: '20:00',
+    period: 'Evening',
+    max_capacity: 3,
+    is_active: true,
+    default_instructor_id: 'ins-anita-03',
+    default_vehicle_id: 'veh-nexon-03',
+    created_at: '2026-01-01T00:00:00Z'
+  }
+];
+
 export const mockSchool: School = {
   id: 'school-model-001',
   name: 'Model Driving Academy',
   slug: 'model-driving-academy',
   contact_phone: '+91 98220 99887',
+  whatsapp_phone: '+91 98220 99887',
   contact_email: 'admin@modeldriving.in',
   address: {
     street: 'Plot 42, Near RTO Circle, MG Road',
@@ -47,6 +171,20 @@ export const mockSchool: School = {
   logo_url: '/logo.svg',
   tagline: 'Operating System for Model Driving Academy',
   rto_registration_no: 'MH-12/MDS/2018/042',
+  operating_hours: 'Monday to Sunday: 6:00 AM – 8:00 PM (Batch Timings: Hourly from 6 AM to 7 PM)',
+  maps_location_url: 'https://maps.google.com/?q=Model+Driving+Academy+Near+RTO+Circle+MG+Road+Pune+Maharashtra+411001',
+  maps_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.180295841459!2d73.87483447519171!3d18.520430282574044!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2c045b85a3637%3A0xb366b56b3e83b482!2sRTO%20Pune!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin',
+  rto_info: {
+    registration_number: 'MH-12/MDS/2018/042',
+    issuing_authority: 'Regional Transport Officer (RTO), Pune Division',
+    rto_name: 'Pune RTO (MH-12)',
+    rto_office_address: 'Regional Transport Office, Near Sangam Bridge, Pune, Maharashtra 411001',
+    rto_contact_phone: '020-26058080',
+    rto_contact_email: 'rto.mh12@mahatranscom.in',
+    valid_till: '2028-03-31',
+    verified: true
+  },
+  privacy_policy_updated_at: '2026-11-10',
   timezone: 'Asia/Kolkata',
   currency: 'INR',
   google_review_url: 'https://g.page/r/model-driving-academy/review',
@@ -223,8 +361,55 @@ export const mockInstructors: Instructor[] = [
 
 export const mockStudents: Student[] = [
   {
+    id: 'stud-mda-125',
+    school_id: 'school-model-001',
+    student_code: 'MDA-2026-00125',
+    full_name: 'Kavita Desai',
+    phone: '+91 98220 54321',
+    email: 'kavita.desai@gmail.com',
+    date_of_birth: '2000-05-15',
+    gender: 'Female',
+    blood_group: 'O+',
+    address: {
+      area: 'FC Road, Deccan',
+      city: 'Pune',
+      pincode: '411004'
+    },
+    emergency_contact: {
+      name: 'Ramesh Desai',
+      relation: 'Father',
+      phone: '+91 98220 11223'
+    },
+    admission_date: '2026-11-10',
+    status: 'Active',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    enrolled_course_id: 'course-4w-complete',
+    enrolled_course_name: 'Four Wheeler Complete Mastery Course',
+    has_existing_ll: false,
+    created_at: '2026-11-10T09:00:00Z',
+    // First-Time Login & Security Credentials
+    account_status: 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED',
+    first_login_completed: false,
+    must_change_password: true,
+    is_temporary_password: true,
+    account_enabled: true,
+    failed_login_attempts: 0,
+    preferred_time_slot_id: 'slot-17-18',
+    preferred_time_slot_label: '05:00 PM – 06:00 PM',
+    alternative_time_slot_id: 'slot-18-19',
+    alternative_time_slot_label: '06:00 PM – 07:00 PM',
+    preferred_period: 'Evening',
+    preferred_days: 'Mon-Sat',
+    timing_status: 'Confirmed',
+    confirmed_slot_id: 'slot-17-18',
+    confirmed_slot_label: '05:00 PM – 06:00 PM',
+    timing_confirmed_by: 'usr-owner-rajesh',
+    timing_confirmed_at: '2026-11-10T09:30:00Z'
+  },
+  {
     id: 'stud-rahul-01',
-    school_id: 'school-apex-001',
+    school_id: 'school-model-001',
     student_code: 'DS-2026-00101',
     full_name: 'Rahul Sharma',
     phone: '+91 98900 11223',
@@ -248,7 +433,25 @@ export const mockStudents: Student[] = [
     assigned_instructor_name: 'Vikram Shinde',
     enrolled_course_id: 'course-4w-complete',
     enrolled_course_name: 'Four Wheeler Complete Mastery Course',
-    created_at: '2026-10-05T09:30:00Z'
+    created_at: '2026-10-05T09:30:00Z',
+    account_status: 'ACTIVE',
+    first_login_completed: true,
+    must_change_password: false,
+    is_temporary_password: false,
+    account_enabled: true,
+    password_changed_at: '2026-10-06T10:00:00Z',
+    failed_login_attempts: 0,
+    preferred_time_slot_id: 'slot-07-08',
+    preferred_time_slot_label: '07:00 AM – 08:00 AM',
+    alternative_time_slot_id: 'slot-16-17',
+    alternative_time_slot_label: '04:00 PM – 05:00 PM',
+    preferred_period: 'Morning',
+    preferred_days: 'Mon-Sat',
+    timing_status: 'Confirmed',
+    confirmed_slot_id: 'slot-07-08',
+    confirmed_slot_label: '07:00 AM – 08:00 AM',
+    timing_confirmed_by: 'usr-owner-rajesh',
+    timing_confirmed_at: '2026-10-05T10:00:00Z'
   },
   {
     id: 'stud-priya-02',
@@ -438,6 +641,35 @@ export const mockStudents: Student[] = [
 ];
 
 export const mockEnrollments: Enrollment[] = [
+  {
+    id: 'enr-mda-125',
+    school_id: 'school-model-001',
+    student_id: 'stud-mda-125',
+    student_code: 'MDA-2026-00125',
+    student_name: 'Kavita Desai',
+    course_id: 'course-4w-complete',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    branch_id: 'branch-camp',
+    assigned_instructor_id: 'ins-vikram-01',
+    assigned_instructor_name: 'Vikram Shinde',
+    assigned_vehicle_id: 'veh-swift-01',
+    vehicle_registration: 'MH-12-AB-1234',
+    start_date: '2026-11-10',
+    expected_end_date: '2026-12-20',
+    agreed_fee: 8500,
+    status: 'Active',
+    total_sessions: 20,
+    completed_sessions: 0,
+    session_allocations: [
+      { id: 'sa-kd1', enrollment_id: 'enr-mda-125', session_template_id: 't1', session_name_snapshot: 'Basic Vehicle Controls & Cockpit Drill', allocated_count: 2, completed_count: 0, sort_order: 1 },
+      { id: 'sa-kd2', enrollment_id: 'enr-mda-125', session_template_id: 't2', session_name_snapshot: 'Clutch, Gear & Steering Coordination', allocated_count: 3, completed_count: 0, sort_order: 2 },
+      { id: 'sa-kd3', enrollment_id: 'enr-mda-125', session_template_id: 't3', session_name_snapshot: 'Straight Road & Lane Discipline', allocated_count: 3, completed_count: 0, sort_order: 3 },
+      { id: 'sa-kd4', enrollment_id: 'enr-mda-125', session_template_id: 't4', session_name_snapshot: 'Dense Traffic & Junction Negotiation', allocated_count: 3, completed_count: 0, sort_order: 4 },
+      { id: 'sa-kd5', enrollment_id: 'enr-mda-125', session_template_id: 't5', session_name_snapshot: 'Parallel, Perpendicular & Angular Parking', allocated_count: 3, completed_count: 0, sort_order: 5 },
+      { id: 'sa-kd6', enrollment_id: 'enr-mda-125', session_template_id: 't6', session_name_snapshot: 'Highway Driving & Speed Management', allocated_count: 3, completed_count: 0, sort_order: 6 },
+      { id: 'sa-kd7', enrollment_id: 'enr-mda-125', session_template_id: 't7', session_name_snapshot: 'RTO Test Track Mock & Final Evaluation', allocated_count: 3, completed_count: 0, sort_order: 7 }
+    ]
+  },
   {
     id: 'enr-rahul-01',
     school_id: 'school-apex-001',
@@ -1106,65 +1338,195 @@ export const mockLicenceRecords: LicenceRecord[] = [
 ];
 
 export const mockSchedules: ClassSchedule[] = [
+  // Today's classes for Vikram Shinde (INS-2026-01) grouped across time slots
   {
-    id: 'sch-01',
-    school_id: 'school-apex-001',
+    id: 'sch-today-01',
+    school_id: 'school-model-001',
     enrollment_id: 'enr-rahul-01',
     student_name: 'Rahul Sharma',
     student_code: 'DS-2026-00101',
+    student_phone: '+91 98900 11223',
+    course_name: 'Four Wheeler Complete Mastery Course',
     instructor_id: 'ins-vikram-01',
     instructor_name: 'Vikram Shinde',
     vehicle_id: 'veh-swift-01',
     vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
-    scheduled_start: '2026-11-10T15:00:00+05:30',
-    scheduled_end: '2026-11-10T16:00:00+05:30',
+    time_slot_id: 'slot-07-08',
+    time_slot_label: '07:00 AM – 08:00 AM',
+    scheduled_start: '2026-11-10T07:00:00+05:30',
+    scheduled_end: '2026-11-10T08:00:00+05:30',
+    topic: 'Dual-control city road driving & lane maintenance',
+    session_type: 'Road Driving',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
+  },
+  {
+    id: 'sch-today-02',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-amit-02',
+    student_name: 'Amit Deshmukh',
+    student_code: 'DS-2026-00102',
+    student_phone: '+91 98900 22334',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-07-08',
+    time_slot_label: '07:00 AM – 08:00 AM',
+    scheduled_start: '2026-11-10T07:00:00+05:30',
+    scheduled_end: '2026-11-10T08:00:00+05:30',
+    topic: 'Clutch biting point & steering hand-over-hand',
+    session_type: 'Basic Controls',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
+  },
+  {
+    id: 'sch-today-03',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-sneha-03',
+    student_name: 'Sneha Patil',
+    student_code: 'DS-2026-00103',
+    student_phone: '+91 98900 33445',
+    course_name: 'Four Wheeler Automatic Course',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-08-09',
+    time_slot_label: '08:00 AM – 09:00 AM',
+    scheduled_start: '2026-11-10T08:00:00+05:30',
+    scheduled_end: '2026-11-10T09:00:00+05:30',
+    topic: 'Reverse bay parking using side rear-view mirrors',
+    session_type: 'Reverse & Parking',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
+  },
+  {
+    id: 'sch-today-04',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-priya-04',
+    student_name: 'Priya Joshi',
+    student_code: 'DS-2026-00104',
+    student_phone: '+91 98900 44556',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-16-17',
+    time_slot_label: '04:00 PM – 05:00 PM',
+    scheduled_start: '2026-11-10T16:00:00+05:30',
+    scheduled_end: '2026-11-10T17:00:00+05:30',
+    topic: 'Expressway speed merging and blind spot shoulder checks',
+    session_type: 'Highway Driving',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
+  },
+  {
+    id: 'sch-today-05',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-mda-125',
+    student_name: 'Kavita Desai',
+    student_code: 'MDA-2026-00125',
+    student_phone: '+91 98220 54321',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-17-18',
+    time_slot_label: '05:00 PM – 06:00 PM',
+    scheduled_start: '2026-11-10T17:00:00+05:30',
+    scheduled_end: '2026-11-10T18:00:00+05:30',
+    topic: 'High-density roundabout negotiation & pedestrian yielding',
+    session_type: 'Traffic Driving',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
+  },
+  {
+    id: 'sch-01',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    student_phone: '+91 98900 11223',
+    course_name: 'Four Wheeler Complete Mastery Course',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    vehicle_id: 'veh-swift-01',
+    vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-16-17',
+    time_slot_label: '04:00 PM – 05:00 PM',
+    scheduled_start: '2026-11-11T16:00:00+05:30',
+    scheduled_end: '2026-11-11T17:00:00+05:30',
     topic: 'Parallel Parking Between Vehicles',
-    status: 'Scheduled'
+    session_type: 'Reverse & Parking',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
   },
   {
     id: 'sch-02',
-    school_id: 'school-apex-001',
+    school_id: 'school-model-001',
     enrollment_id: 'enr-rahul-01',
     student_name: 'Rahul Sharma',
     student_code: 'DS-2026-00101',
+    student_phone: '+91 98900 11223',
+    course_name: 'Four Wheeler Complete Mastery Course',
     instructor_id: 'ins-vikram-01',
     instructor_name: 'Vikram Shinde',
     vehicle_id: 'veh-swift-01',
     vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
-    scheduled_start: '2026-11-12T15:00:00+05:30',
-    scheduled_end: '2026-11-12T16:00:00+05:30',
+    time_slot_id: 'slot-16-17',
+    time_slot_label: '04:00 PM – 05:00 PM',
+    scheduled_start: '2026-11-12T16:00:00+05:30',
+    scheduled_end: '2026-11-12T17:00:00+05:30',
     topic: 'Highway Speed Control & Overtaking',
-    status: 'Scheduled'
+    session_type: 'Highway Driving',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
   },
   {
     id: 'sch-03',
-    school_id: 'school-apex-001',
+    school_id: 'school-model-001',
     enrollment_id: 'enr-rahul-01',
     student_name: 'Rahul Sharma',
     student_code: 'DS-2026-00101',
+    student_phone: '+91 98900 11223',
+    course_name: 'Four Wheeler Complete Mastery Course',
     instructor_id: 'ins-vikram-01',
     instructor_name: 'Vikram Shinde',
     vehicle_id: 'veh-swift-01',
     vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-10-11',
+    time_slot_label: '10:00 AM – 11:00 AM',
     scheduled_start: '2026-11-14T10:00:00+05:30',
     scheduled_end: '2026-11-14T11:00:00+05:30',
     topic: 'RTO Track Mock Test & Signage Quiz',
-    status: 'Scheduled'
+    session_type: 'RTO Test Prep',
+    status: 'Scheduled',
+    attendance_status: 'Not_Marked'
   },
   {
     id: 'sch-04',
-    school_id: 'school-apex-001',
+    school_id: 'school-model-001',
     enrollment_id: 'enr-rahul-01',
     student_name: 'Rahul Sharma',
     student_code: 'DS-2026-00101',
+    student_phone: '+91 98900 11223',
+    course_name: 'Four Wheeler Complete Mastery Course',
     instructor_id: 'ins-vikram-01',
     instructor_name: 'Vikram Shinde',
     vehicle_id: 'veh-swift-01',
     vehicle_name: 'Swift Dzire (MH-12-AB-1234)',
+    time_slot_id: 'slot-08-09',
+    time_slot_label: '08:00 AM – 09:00 AM',
     scheduled_start: '2026-11-09T08:00:00+05:30',
     scheduled_end: '2026-11-09T09:00:00+05:30',
     topic: 'Hill Start & Half-Clutch Slope Balance',
-    status: 'Completed'
+    session_type: 'Basic Controls',
+    status: 'Completed',
+    attendance_status: 'Present'
   },
   {
     id: 'sch-05',
@@ -1210,6 +1572,26 @@ export const mockSchedules: ClassSchedule[] = [
     scheduled_end: '2026-11-09T10:00:00+05:30',
     topic: 'Clutch, Gear & Steering Coordination',
     status: 'Completed'
+  }
+];
+
+export const mockRescheduleRequests: RescheduleRequest[] = [
+  {
+    id: 'resch-01',
+    school_id: 'school-model-001',
+    enrollment_id: 'enr-rahul-01',
+    student_id: 'stud-rahul-01',
+    student_name: 'Rahul Sharma',
+    student_code: 'DS-2026-00101',
+    instructor_id: 'ins-vikram-01',
+    current_schedule_id: 'sch-today-01',
+    current_slot_label: '07:00 AM – 08:00 AM',
+    requested_slot_id: 'slot-17-18',
+    requested_slot_label: '05:00 PM – 06:00 PM',
+    requested_date: '2026-11-12',
+    reason: 'College engineering laboratory exam scheduled in the early morning batch.',
+    status: 'Pending',
+    created_at: '2026-11-09T18:30:00Z'
   }
 ];
 
@@ -1589,4 +1971,37 @@ export const mockCertificateDownloads: CertificateDownloadLog[] = [
 
 export const mockCertificateTemplates: CertificateTemplate[] = [
   DEFAULT_CERTIFICATE_TEMPLATE
+];
+
+export const mockStudentSkillAssessments: StudentSkillAssessment[] = [
+  {
+    id: 'skill-rahul-01',
+    student_id: 'stud-rahul-01',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    steering_control: 4,
+    clutch_control: 3,
+    gear_changing: 4,
+    reverse_parking: 3,
+    highway_driving: 4,
+    traffic_handling: 3,
+    road_confidence: 4,
+    remarks: 'Steering hand-over-hand technique is solid. Needs a little more smooth deceleration when approaching busy signals.',
+    updated_at: '2026-11-09T18:00:00+05:30'
+  },
+  {
+    id: 'skill-kavita-01',
+    student_id: 'stud-kavita-04',
+    instructor_id: 'ins-vikram-01',
+    instructor_name: 'Vikram Shinde',
+    steering_control: 5,
+    clutch_control: 4,
+    gear_changing: 4,
+    reverse_parking: 4,
+    highway_driving: 5,
+    traffic_handling: 4,
+    road_confidence: 5,
+    remarks: 'Excellent mirror checking and lane discipline. Confident throttle management on bypass inclines.',
+    updated_at: '2026-11-09T18:30:00+05:30'
+  }
 ];

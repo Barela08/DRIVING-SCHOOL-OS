@@ -24,7 +24,10 @@ import {
   PhoneCall,
   Menu,
   X,
-  ChevronRight
+  ExternalLink,
+  Navigation,
+  Building2,
+  MessageCircle
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -87,9 +90,13 @@ export default function HomePage() {
     }
   ];
 
+  const whatsappNumber = school.whatsapp_phone?.replace(/\D/g, '') || school.contact_phone.replace(/\D/g, '');
+  const mapsUrl = school.maps_location_url || `https://maps.google.com/?q=${encodeURIComponent(`${school.name} ${school.address.street} ${school.address.city} ${school.address.pincode}`)}`;
+  const mapsEmbed = school.maps_embed_url || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.180295841459!2d73.87483447519171!3d18.520430282574044!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2c045b85a3637%3A0xb366b56b3e83b482!2sRTO%20Pune!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin';
+
   return (
     <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Public Header / Navigation Bar */}
+      {/* MODULE 2: Public Navigation (NO LOGIN BUTTON/LINK) */}
       <header className="sticky top-0 z-50 bg-[#111E32]/95 backdrop-blur-md border-b border-[#1E293B] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo & Brand Identity */}
@@ -114,21 +121,15 @@ export default function HomePage() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
-            <a href="#about" className="hover:text-blue-400 transition-colors">About Us</a>
+            <Link href="/" className="hover:text-blue-400 transition-colors">Home</Link>
             <a href="#courses" className="hover:text-blue-400 transition-colors">Courses</a>
-            <a href="#training" className="hover:text-blue-400 transition-colors">Training Plan</a>
-            <a href="#fleet" className="hover:text-blue-400 transition-colors">Fleet & Safety</a>
-            <a href="#contact" className="hover:text-blue-400 transition-colors">Contact</a>
+            <a href="#about" className="hover:text-blue-400 transition-colors">About Us</a>
+            <Link href="/contact" className="hover:text-blue-400 transition-colors">Contact</Link>
+            <Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
           </nav>
 
-          {/* Right Action Buttons */}
+          {/* Primary Action Button (Start New Admission ONLY — NO LOGIN) */}
           <div className="hidden sm:flex items-center gap-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition shadow-sm"
-            >
-              Login
-            </Link>
             <Link
               href="/admission"
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 transition shadow-lg shadow-blue-600/25 flex items-center gap-1.5"
@@ -142,6 +143,7 @@ export default function HomePage() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+            aria-label="Toggle navigation"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -151,13 +153,13 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0B1728] border-b border-[#1E293B] px-4 py-6 space-y-4 animate-fadeIn">
             <nav className="flex flex-col space-y-3 text-sm font-semibold text-slate-300">
-              <a 
-                href="#about" 
+              <Link 
+                href="/" 
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-blue-400 py-1"
               >
-                About Us
-              </a>
+                Home
+              </Link>
               <a 
                 href="#courses" 
                 onClick={() => setMobileMenuOpen(false)}
@@ -166,51 +168,44 @@ export default function HomePage() {
                 Courses
               </a>
               <a 
-                href="#training" 
+                href="#about" 
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-blue-400 py-1"
               >
-                Training Plan
+                About Us
               </a>
-              <a 
-                href="#fleet" 
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-blue-400 py-1"
-              >
-                Fleet & Safety
-              </a>
-              <a 
-                href="#contact" 
+              <Link 
+                href="/contact" 
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-blue-400 py-1"
               >
                 Contact
-              </a>
+              </Link>
+              <Link 
+                href="/privacy-policy" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:text-blue-400 py-1"
+              >
+                Privacy Policy
+              </Link>
             </nav>
 
-            <div className="pt-4 border-t border-slate-800 flex flex-col gap-2.5">
+            <div className="pt-4 border-t border-slate-800">
               <Link
                 href="/admission"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl text-xs font-bold text-center text-white bg-blue-600 hover:bg-blue-500 transition"
+                className="w-full py-3 rounded-xl text-xs font-bold text-center text-white bg-blue-600 hover:bg-blue-500 transition block"
               >
                 Start New Admission
-              </Link>
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl text-xs font-bold text-center text-slate-300 bg-slate-800 hover:bg-slate-700 transition"
-              >
-                Login to Portal
               </Link>
             </div>
           </div>
         )}
       </header>
 
-      {/* Hero Section */}
+      {/* MODULE 1: Hero Section (Only one primary admission action: START NEW ADMISSION) */}
       <section className="relative bg-gradient-to-b from-[#111E32] via-[#0D192B] to-[#0B1728] text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Glow backdrop circles */}
+        {/* Glow backdrop circle */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-blue-600/15 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
@@ -230,21 +225,14 @@ export default function HomePage() {
             Govt. RTO Authorized Driving Institute in Pune. Experience structured 30-day curriculum, dual-control safety fleet, certified instructors, and 100% digital student course tracking.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          {/* Primary Action Button (Only START NEW ADMISSION — NO LOGIN BUTTON) */}
+          <div className="flex items-center justify-center pt-2">
             <Link
               href="/admission"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm transition-all shadow-xl shadow-blue-600/30 hover:shadow-blue-600/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
+              className="px-10 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm transition-all shadow-xl shadow-blue-600/30 hover:shadow-blue-600/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
             >
               <span>Start New Admission</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#14243A] hover:bg-[#1A2E4B] border border-slate-700 text-slate-200 font-bold text-sm transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              <span>Student & Staff Login</span>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
             </Link>
           </div>
 
@@ -370,7 +358,7 @@ export default function HomePage() {
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                        Includes RTO LL & DL
+                        Includes RTO Documentation
                       </span>
                     </div>
 
@@ -433,7 +421,7 @@ export default function HomePage() {
             Structured 6-Stage Curriculum
           </h2>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-            Every session builds upon the last. Track your daily attendance and session logs in real time on the Student Course Calendar.
+            Every session builds upon the last, progressively turning beginners into confident, licensed highway drivers.
           </p>
         </div>
 
@@ -468,7 +456,7 @@ export default function HomePage() {
               Safety Certified Dual-Control Vehicles
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Every car in the Model Driving Academy fleet is certified by the regional transport office (RTO) and fitted with emergency dual-pedals. You will learn in air-conditioned comfort with modern power steering, ABS, and clean maintenance logs.
+              Every car in the Model Driving Academy fleet is certified by the regional transport office (RTO) and fitted with emergency dual-pedals. Learn in air-conditioned comfort with modern power steering, ABS, and clean maintenance logs.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
@@ -509,7 +497,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Access to the Student Course Calendar and attendance tracker</span>
+                <span>Verified attendance and course progress tracking</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -528,48 +516,218 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact & Location Details */}
+      {/* MODULE 4: Google Maps Location & Campus Address Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <Compass className="w-3.5 h-3.5" />
+              Campus Location & Directions
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Visit Model Driving Academy
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {school.address.street}, {school.address.city}, {school.address.state} — {school.address.pincode}
+            </p>
+          </div>
+
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 transition shrink-0"
+          >
+            <Navigation className="w-4 h-4" />
+            <span>Get Directions on Google Maps</span>
+            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+          </a>
+        </div>
+
+        {/* Embedded Interactive Map */}
+        <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 h-80 sm:h-96 w-full bg-slate-100 dark:bg-slate-900 relative shadow-sm">
+          <iframe
+            title={`${school.name} Google Maps Location`}
+            src={mapsEmbed}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen={false}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="w-full h-full"
+          />
+        </div>
+      </section>
+
+      {/* MODULE 5: RTO and Driving School Official Information */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-[#0D1726] border-y border-[#E5EAF1] dark:border-[#1E293B]">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Verified Regulatory Credentials
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Official Driving School & Government RTO Information
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Transparent, verified licensing records for {school.name} alongside regional transport office jurisdiction.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+            {/* Box 1: Driving School Authorization */}
+            <div className="p-7 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Car className="w-4 h-4 text-blue-600" />
+                  Driving School Authorization
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  Verified Active
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">School Registration Number:</span>
+                  <strong className="text-slate-900 dark:text-white font-mono text-sm block mt-0.5">
+                    {school.rto_info?.registration_number || school.rto_registration_no || 'MH-12/MDS/2018/042'}
+                  </strong>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Issuing Authority:</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold block mt-0.5">
+                    {school.rto_info?.issuing_authority || 'Regional Transport Officer (RTO), Pune Division'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Authorization Validity:</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold block mt-0.5">
+                    Valid till {school.rto_info?.valid_till || 'March 31, 2028'}
+                  </span>
+                </div>
+
+                <div className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
+                  Govt. authorized under Motor Vehicles Rules for theoretical road safety instruction and dual-control vehicle practical training.
+                </div>
+              </div>
+            </div>
+
+            {/* Box 2: Relevant Government RTO Information */}
+            <div className="p-7 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-purple-600" />
+                  Government RTO Jurisdiction
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                  MoRTH Sarathi
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Applicable RTO Division:</span>
+                  <strong className="text-slate-900 dark:text-white font-mono text-sm block mt-0.5">
+                    {school.rto_info?.rto_name || 'Pune RTO (MH-12)'}
+                  </strong>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">RTO Office Address:</span>
+                  <span className="text-slate-800 dark:text-slate-200 block mt-0.5 leading-relaxed">
+                    {school.rto_info?.rto_office_address || 'Regional Transport Office, Near Sangam Bridge, Pune, Maharashtra 411001'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Official National Portal:</span>
+                  <a
+                    href="https://parivahan.gov.in/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold hover:underline mt-0.5"
+                  >
+                    <span>parivahan.gov.in (Sarathi)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal Notice */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Regulatory Disclaimer:</span>
+            <p className="leading-relaxed">
+              {school.name} is an authorized private driving institute providing classroom and cockpit driving instruction. We are not a government RTO office. All official Learner Licences and Driving Licences are issued exclusively by the Government Transport Department via the official Parivahan Sarathi framework.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* MODULE 3: Contact Section */}
       <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-12">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
             Get in Touch
           </div>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-            Visit Our Main Campus or Call Us Today
+            Official Academy Contact Information
           </h2>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-            Have questions about our course durations, batch timings, or RTO procedures? Our admissions desk is open 7 days a week.
+            Have questions regarding batch timings, course fees, or RTO procedures? Our admissions desk is open 7 days a week.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <MapPin className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">Academy Address</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">Postal Address</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Plot 42, Near RTO Circle, MG Road,<br />
-              Pune, Maharashtra — 411001
+              {school.address.street},<br />
+              {school.address.city}, {school.address.state} — {school.address.pincode}
             </p>
-            <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 block pt-1">
-              RTO Reg: MH-12/MDS/2018/042
-            </span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <PhoneCall className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">Direct Hotline</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">Official Telephone</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Call our support coordinators directly for instant batch allotment.
+              Direct line to admissions coordinator.
             </p>
             <a
-              href="tel:+919822099887"
+              href={`tel:${school.contact_phone}`}
               className="text-sm font-black font-mono text-emerald-600 dark:text-emerald-400 hover:underline block pt-1"
             >
-              +91 98220 99887
+              {school.contact_phone}
+            </a>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">WhatsApp Desk</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Instant batch timing and slot availability.
+            </p>
+            <a
+              href={`https://wa.me/${whatsappNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-black font-mono text-emerald-600 dark:text-emerald-400 hover:underline pt-1"
+            >
+              <span>{school.whatsapp_phone || school.contact_phone}</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
 
@@ -577,18 +735,15 @@ export default function HomePage() {
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <Clock className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">Operating Hours</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">Business Hours</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Practical driving batches run every hour from 6:00 AM to 7:00 PM.
+              {school.operating_hours || 'Monday – Sunday: 6:00 AM – 8:00 PM'}
             </p>
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block pt-1">
-              Mon – Sun: 6:00 AM – 8:00 PM
-            </span>
           </div>
         </div>
       </section>
 
-      {/* Public Footer */}
+      {/* Public Footer (NO LOGIN LINK) */}
       <footer className="mt-auto border-t border-[#1E293B] bg-[#070E1A] text-slate-400 text-xs py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -606,16 +761,17 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-6 text-xs text-slate-400">
-            <a href="#about" className="hover:text-white transition">About</a>
+            <Link href="/" className="hover:text-white transition">Home</Link>
             <a href="#courses" className="hover:text-white transition">Courses</a>
-            <a href="#training" className="hover:text-white transition">Training Plan</a>
-            <Link href="/admission" className="hover:text-white transition">Admission</Link>
-            <Link href="/login" className="hover:text-white transition">Login</Link>
+            <a href="#about" className="hover:text-white transition">About Us</a>
+            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+            <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
+            <Link href="/admission" className="hover:text-white transition font-semibold text-white">Start New Admission</Link>
           </div>
 
           <div className="text-[11px] text-slate-500 text-center md:text-right">
-            © 2026 Model Driving Academy. All rights reserved.<br />
-            Govt. RTO Registration MH-12/MDS/2018/042
+            © 2026 {school.name}. All rights reserved.<br />
+            Govt. RTO Registration {school.rto_registration_no}
           </div>
         </div>
       </footer>

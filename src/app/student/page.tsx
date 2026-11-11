@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  GraduationCap, 
+  IndianRupee, 
+  User, 
+  ShieldCheck 
+} from 'lucide-react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { Payment } from '@/types';
 import { ReceiptModal } from '@/components/ReceiptModal';
@@ -24,6 +32,7 @@ import { StudentHelpSupport } from '@/components/student/StudentHelpSupport';
 import { StudentSettings } from '@/components/student/StudentSettings';
 import { StudentCertificateView } from '@/components/student/StudentCertificateView';
 import { CertificateFeedbackModal } from '@/components/modals/CertificateFeedbackModal';
+import { FirstLoginPasswordSetup } from '@/components/student/FirstLoginPasswordSetup';
 
 interface StudentDashboardPageProps {
   initialModule?: string;
@@ -54,7 +63,7 @@ const normalizeTab = (module?: string): StudentNavTab => {
   return 'dashboard';
 };
 
-export default function StudentDashboardPage({ initialModule = 'dashboard' }: StudentDashboardPageProps) {
+function StudentDashboardContent({ initialModule = 'dashboard' }: StudentDashboardPageProps) {
   const {
     school,
     role,
@@ -205,6 +214,25 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
     );
   }
 
+  // MANDATORY ROUTE GUARD: First-Time Login Password Setup
+  // If first login or password setup is required, prevent accessing the dashboard
+  const isPasswordSetupRequired = Boolean(
+    currentStudent.must_change_password ||
+    currentStudent.first_login_completed === false ||
+    currentStudent.account_status === 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED'
+  );
+
+  if (isPasswordSetupRequired) {
+    return (
+      <FirstLoginPasswordSetup
+        student={currentStudent}
+        onSuccess={() => {
+          setActiveTab('dashboard');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Application Header */}
@@ -230,49 +258,36 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
         {/* Main Content Workspace */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-all duration-300">
           <div className="max-w-6xl mx-auto space-y-6">
-            {/* Student Account Switcher Bar (Demo & Testing Feature) */}
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-700 dark:text-slate-300">Active Learner Session:</span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">{currentStudent.full_name}</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">{currentStudent.student_code}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  currentStudent.status === 'Course Completed'
-                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-600 border border-amber-500/30'
-                }`}>
-                  {currentStudent.status}
-                </span>
+            {/* Active Learner Status Card */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  {currentStudent.full_name ? currentStudent.full_name.charAt(0).toUpperCase() : 'S'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 dark:text-white text-sm">{currentStudent.full_name}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">{currentStudent.student_code}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      currentStudent.status === 'Course Completed'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                    }`}>
+                      {currentStudent.status}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                    {currentEnrollment.course_name} • Admitted on {currentStudent.admission_date}
+                  </span>
+                </div>
               </div>
 
-              {role !== 'student' && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-slate-500">Staff Preview Switcher:</span>
-                  {students.map(s => {
-                    let badge = '';
-                    if (s.id === 'stud-amit-03') badge = '🎓';
-                    else if (s.id === 'stud-kartik-07') badge = '🔔 LL Alert';
-                    else if (s.id === 'stud-ananya-06') badge = '✅ Has LL';
-                    else if (s.id === 'stud-sneha-08') badge = '⏳ 8 Days';
-                    else if (s.id === 'stud-farhan-09') badge = '⚠️ Expired LL';
-
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => setActiveStudentId(s.id)}
-                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition flex items-center gap-1 ${
-                          activeStudentId === s.id
-                            ? 'bg-blue-600 text-white font-bold shadow-sm'
-                            : 'bg-[#F5F7FB] dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        <span>{s.full_name.split(' ')[0]}</span>
-                        {badge && <span className="text-[10px] opacity-90">{badge}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <div className="flex items-center gap-2 self-start sm:self-auto text-[11px]">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#0B1728] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Authenticated Learner Session</span>
+                </span>
+              </div>
             </div>
 
             {activeTab === 'dashboard' && (
@@ -412,6 +427,59 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
         </main>
       </div>
 
+      {/* Mobile Bottom Navigation Bar (Section 14) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#111E32]/95 backdrop-blur-md border-t border-[#E5EAF1] dark:border-[#1E293B] py-2 px-3 flex items-center justify-around text-[10px] no-print shadow-xl">
+        <button
+          onClick={() => handleSelectTab('dashboard')}
+          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'dashboard' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span>Home</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('calendar')}
+          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'calendar' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Calendar</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('course')}
+          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'course' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Course</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('fees')}
+          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'fees' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <IndianRupee className="w-4 h-4" />
+          <span>Fees</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('profile')}
+          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'profile' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Profile</span>
+        </button>
+      </nav>
+
       {/* Official Tax Invoice & Payment Receipt Modal */}
       <ReceiptModal
         payment={selectedReceipt}
@@ -435,5 +503,13 @@ export default function StudentDashboardPage({ initialModule = 'dashboard' }: St
         onProceedToDownload={executeDownload}
       />
     </div>
+  );
+}
+
+export default function StudentDashboardPage(props: StudentDashboardPageProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Student Dashboard...</div>}>
+      <StudentDashboardContent {...props} />
+    </Suspense>
   );
 }

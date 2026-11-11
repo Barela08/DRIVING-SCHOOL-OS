@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { useRouter } from 'next/navigation';
 import { OwnerSidebar, OwnerNavSection } from '@/components/owner/OwnerSidebar';
@@ -38,7 +38,7 @@ import { HelpSupportModal } from '@/components/modals/HelpSupportModal';
 
 import { Student, Payment, LicenceRecord, Instructor } from '@/types';
 
-export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { initialModule?: string } = {}) {
+function OwnerDashboardContent({ initialModule = 'dashboard' }: { initialModule?: string } = {}) {
   const router = useRouter();
   const { school, switchRole, addToast, logoutUser } = useDrivingSchool();
 
@@ -261,5 +261,13 @@ export default function OwnerDashboardPage({ initialModule = 'dashboard' }: { in
         />
       )}
     </div>
+  );
+}
+
+export default function OwnerDashboardPage(props: { initialModule?: string }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Owner Dashboard...</div>}>
+      <OwnerDashboardContent {...props} />
+    </Suspense>
   );
 }

@@ -16,8 +16,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  FileCheck2
+  FileCheck2,
+  KeyRound,
+  Lock,
+  Unlock,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
+import { ResetPasswordModal } from '@/components/modals/ResetPasswordModal';
 
 interface StudentsViewProps {
   onOpenStudent: (student: Student) => void;
@@ -25,13 +31,14 @@ interface StudentsViewProps {
 }
 
 export const StudentsView: React.FC<StudentsViewProps> = ({ onOpenStudent, onQuickAdd }) => {
-  const { students, courses, enrollments, payments, instructors } = useDrivingSchool();
+  const { students, courses, enrollments, payments, instructors, toggleStudentAccount, addToast } = useDrivingSchool();
 
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'balance'>('date');
   const [page, setPage] = useState(1);
+  const [resetModalStudent, setResetModalStudent] = useState<Student | null>(null);
   const pageSize = 8;
 
   // Filtered and sorted students
@@ -146,6 +153,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onOpenStudent, onQui
                 <th className="px-4 py-3.5">Paid</th>
                 <th className="px-4 py-3.5">Pending Dues</th>
                 <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5">Account & Security</th>
                 <th className="px-4 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -204,20 +212,70 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onOpenStudent, onQui
                           {stud.status}
                         </span>
                       </td>
+                      <td className="px-4 py-3.5">
+                        <div className="space-y-1">
+                          {stud.account_enabled === false || stud.account_status === 'DISABLED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              <ShieldAlert className="w-3 h-3 text-rose-400" />
+                              Disabled
+                            </span>
+                          ) : stud.account_status === 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED' || !stud.first_login_completed ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              <KeyRound className="w-3 h-3 text-amber-400" />
+                              1st Login Pending
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              Active & Secured
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400 block font-mono">
+                            {stud.password_changed_at 
+                              ? `Pwd: ${new Date(stud.password_changed_at).toLocaleDateString()}` 
+                              : 'ID as Temp Pwd'}
+                          </span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          onClick={() => onOpenStudent(stud)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-bold text-xs transition"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> 10-Tab Profile
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setResetModalStudent(stud)}
+                            title="Reset password to initial temporary Student ID"
+                            className="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const res = await toggleStudentAccount(stud.id);
+                              addToast(res.message, 'info');
+                            }}
+                            title={stud.account_enabled === false ? 'Enable student portal access' : 'Disable student portal access'}
+                            className={`p-1.5 rounded-xl border transition ${
+                              stud.account_enabled === false 
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30' 
+                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                            }`}
+                          >
+                            {stud.account_enabled === false ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => onOpenStudent(stud)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-bold text-xs transition"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Profile
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500 text-xs">
+                  <td colSpan={9} className="text-center py-12 text-slate-500 text-xs">
                     No student records matching current filters.
                   </td>
                 </tr>

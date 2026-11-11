@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { 
@@ -41,7 +41,7 @@ interface StaffDashboardProps {
   initialModule?: string;
 }
 
-export default function StaffDashboardPage({ initialModule = 'dashboard' }: StaffDashboardProps) {
+function StaffDashboardContent({ initialModule = 'dashboard' }: StaffDashboardProps) {
   const { 
     school, 
     currentUser,
@@ -900,5 +900,13 @@ export default function StaffDashboardPage({ initialModule = 'dashboard' }: Staf
         onClose={() => setSelectedReceipt(null)} 
       />
     </div>
+  );
+}
+
+export default function StaffDashboardPage(props: StaffDashboardProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Staff Dashboard...</div>}>
+      <StaffDashboardContent {...props} />
+    </Suspense>
   );
 }

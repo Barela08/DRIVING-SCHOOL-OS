@@ -79,19 +79,24 @@ export const StudentCourseCalendar: React.FC<StudentCourseCalendarProps> = ({
     .filter(a => a.status === 'Present')
     .sort((a, b) => new Date(a.attendance_date).getTime() - new Date(b.attendance_date).getTime());
 
+  // Distinct attended calendar dates: multiple sessions on the same date do not inflate distinct class-day count
+  const distinctAttendedDates = Array.from(
+    new Set(verifiedPresentAttendance.map(a => a.attendance_date.split('T')[0]))
+  ).sort();
+
   // Upcoming scheduled classes
   const upcomingSchedules = schedules
     .filter(s => s.status === 'Scheduled')
     .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
 
-  // Cancelled records
+  // Cancelled or holiday records
   const cancelledAttendance = attendance.filter(
     a => a.status === 'Cancelled_By_Student' || a.status === 'Absent'
   );
   const cancelledSchedules = schedules.filter(s => s.status === 'Cancelled');
 
-  // Completed class count derived purely from verified attendance records
-  const completedCount = verifiedPresentAttendance.length;
+  // Completed class count derived purely from distinct verified class dates
+  const completedCount = distinctAttendedDates.length;
   const remainingCount = Math.max(0, courseDurationDays - completedCount);
   const progressPercent = Math.min(100, Math.round((completedCount / courseDurationDays) * 100));
 
@@ -202,7 +207,7 @@ export const StudentCourseCalendar: React.FC<StudentCourseCalendarProps> = ({
                 Daily Class Progress & Attendance
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                Track your full <strong className="text-white font-bold">{courseDurationDays}-Day Course Duration</strong>. Calendar statuses update automatically from verified instructor attendance logs.
+                Track your full <strong className="text-white font-bold">30-Day Course Duration</strong> ({courseDurationDays} scheduled course days). Calendar statuses update automatically from verified instructor attendance logs.
               </p>
             </div>
 
@@ -393,8 +398,13 @@ export const StudentCourseCalendar: React.FC<StudentCourseCalendarProps> = ({
             borderClass = 'border-slate-300 dark:border-slate-800';
             badgeClass = 'bg-slate-500 text-white';
             icon = <Ban className="w-4 h-4 text-slate-400 shrink-0" />;
-          } else {
+          } else if (slot.status === 'incomplete') {
             // RED: Required class/session remains incomplete
+            bgClass = 'bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent dark:bg-red-950/20 hover:bg-red-500/15';
+            borderClass = 'border-red-500/30 hover:border-red-500/70 shadow-sm shadow-red-500/5';
+            badgeClass = 'bg-red-600 text-white';
+            icon = <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />;
+          } else {
             bgClass = 'bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent dark:bg-red-950/20 hover:bg-red-500/15';
             borderClass = 'border-red-500/30 hover:border-red-500/70 shadow-sm shadow-red-500/5';
             badgeClass = 'bg-red-600 text-white';

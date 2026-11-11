@@ -248,7 +248,7 @@ function VerifyCertificateContent() {
 
         {/* Informational Footer */}
         <div className="text-center text-xs text-slate-500 pt-4 border-t border-slate-800">
-          <p>© {new Date().getFullYear()} {school.name}. Authorized Motor Driving Training Institution &amp; Licensing Centre.</p>
+          <p>© 2026 {school.name}. Authorized Motor Driving Training Institution &amp; Licensing Centre.</p>
         </div>
       </main>
     </div>

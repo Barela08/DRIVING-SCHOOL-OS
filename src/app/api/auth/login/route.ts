@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
     let matchedInstructorId: string | undefined = undefined;
     let matchedEmployeeId: string | undefined = undefined;
     let isAccountActive: boolean = true;
+    let studentMustChangePassword: boolean = false;
     let validSecretMatch: boolean = false;
 
     // Normalize password input for demo/standard matching
@@ -224,11 +225,30 @@ export async function POST(req: NextRequest) {
         matchedUserId = foundStud.user_id || `usr-${foundStud.id}`;
         matchedName = foundStud.full_name;
         matchedStudentId = foundStud.id;
-        isAccountActive = foundStud.status !== 'Cancelled';
+        isAccountActive = foundStud.status !== 'Cancelled' && foundStud.account_enabled !== false && foundStud.account_status !== 'DISABLED';
+        
+        studentMustChangePassword = Boolean(
+          foundStud.must_change_password || 
+          foundStud.first_login_completed === false || 
+          foundStud.account_status === 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED'
+        );
+
+        const isInputStudentId = passInput.trim().toUpperCase() === foundStud.student_code.toUpperCase();
+
+        // If permanent password has already been created, initial Student ID as password MUST NOT work!
+        if (!studentMustChangePassword && isInputStudentId) {
+          return NextResponse.json({
+            success: false,
+            error: 'Your initial Student ID password was invalidated after your first login. Please enter your permanent password.'
+          }, { status: 401 });
+        }
+
         validSecretMatch = (
+          (studentMustChangePassword && isInputStudentId) ||
           passInput === 'pass123' || 
           passInput === '••••••••' || 
           passInput === '1234' || 
+          passInput === 'Driving@2026' ||
           passInput === 'password'
         );
       }
@@ -326,7 +346,9 @@ export async function POST(req: NextRequest) {
       student: '/student/dashboard'
     };
 
-    const targetRoute = redirectMap[matchedRole];
+    const targetRoute = (matchedRole === 'student' && studentMustChangePassword)
+      ? '/student/setup-password'
+      : redirectMap[matchedRole];
 
     const sessionPayload = {
       userId: matchedUserId,
@@ -336,6 +358,7 @@ export async function POST(req: NextRequest) {
       studentId: matchedStudentId,
       instructorId: matchedInstructorId,
       employeeId: matchedEmployeeId,
+      mustChangePassword: studentMustChangePassword,
       authenticatedAt: new Date().toISOString()
     };
 
@@ -343,6 +366,7 @@ export async function POST(req: NextRequest) {
       success: true,
       role: matchedRole,
       redirectTo: targetRoute,
+      mustChangePassword: studentMustChangePassword,
       user: sessionPayload
     });
 

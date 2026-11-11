@@ -4,11 +4,23 @@
 
 export type UserRole = 'owner' | 'staff' | 'instructor' | 'student';
 
+export interface SchoolRTOInfo {
+  registration_number?: string;
+  issuing_authority?: string;
+  rto_name?: string;
+  rto_office_address?: string;
+  rto_contact_phone?: string;
+  rto_contact_email?: string;
+  valid_till?: string;
+  verified?: boolean;
+}
+
 export interface School {
   id: string;
   name: string;
   slug: string;
   contact_phone: string;
+  whatsapp_phone?: string;
   contact_email: string;
   address: {
     street?: string;
@@ -19,6 +31,12 @@ export interface School {
   logo_url?: string;
   tagline?: string;
   rto_registration_no?: string;
+  operating_hours?: string;
+  maps_location_url?: string;
+  maps_embed_url?: string;
+  rto_info?: SchoolRTOInfo;
+  privacy_policy?: string;
+  privacy_policy_updated_at?: string;
   timezone: string;
   currency: string;
   google_review_url?: string;
@@ -47,11 +65,19 @@ export interface UserProfile {
   branch_id?: string;
 }
 
+export type StudentAccountStatus = 
+  | 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED' 
+  | 'ACTIVE' 
+  | 'DISABLED' 
+  | 'LOCKED'
+  | 'active'
+  | 'temporary_password';
+
 export interface Student {
   id: string;
   school_id: string;
   user_id?: string;
-  student_code: string; // e.g. DS-2026-00101
+  student_code: string; // e.g. MDA-2026-00125, DS-2026-00101
   full_name: string;
   phone: string;
   email?: string;
@@ -77,6 +103,93 @@ export interface Student {
   enrolled_course_name?: string;
   has_existing_ll?: boolean;
   ll_number?: string;
+  created_at: string;
+
+  // First-Time Login & Mandatory Password Setup
+  account_status?: StudentAccountStatus;
+  first_login_completed?: boolean;
+  must_change_password?: boolean;
+  is_temporary_password?: boolean;
+  password_changed_at?: string;
+  account_enabled?: boolean;
+  last_login_at?: string;
+  failed_login_attempts?: number;
+  lockout_until?: string;
+  reset_by?: string;
+  reset_at?: string;
+
+  // Preferred Driving Class Timing & Schedule (Module 1, 2, 6)
+  preferred_time_slot_id?: string;
+  preferred_time_slot_label?: string;
+  alternative_time_slot_id?: string;
+  alternative_time_slot_label?: string;
+  preferred_period?: TimeSlotPeriod;
+  preferred_days?: 'Mon-Sat' | 'Weekdays' | 'Weekends' | 'Custom';
+  custom_slot_notes?: string;
+  timing_status?: TimingConfirmationStatus;
+  confirmed_slot_id?: string;
+  confirmed_slot_label?: string;
+  timing_confirmed_by?: string;
+  timing_confirmed_at?: string;
+}
+
+export type TimeSlotPeriod = 'Morning' | 'Afternoon' | 'Evening';
+
+export type TimingConfirmationStatus = 
+  | 'Pending' 
+  | 'Confirmed' 
+  | 'Rejected' 
+  | 'Alternative Offered';
+
+export interface TimeSlot {
+  id: string;
+  school_id: string;
+  slot_label: string; // e.g. "06:00 AM – 07:00 AM"
+  start_time: string; // "06:00"
+  end_time: string;   // "07:00"
+  period: TimeSlotPeriod;
+  max_capacity: number; // Maximum students permitted per slot
+  is_active: boolean;
+  default_instructor_id?: string;
+  default_vehicle_id?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface StudentPreferredTiming {
+  preferred_time_slot_id: string;
+  preferred_time_slot_label: string;
+  alternative_time_slot_id?: string;
+  alternative_time_slot_label?: string;
+  preferred_period?: TimeSlotPeriod;
+  preferred_days?: 'Mon-Sat' | 'Weekdays' | 'Weekends' | 'Custom';
+  custom_slot_notes?: string;
+  timing_status: TimingConfirmationStatus;
+  confirmed_slot_id?: string;
+  confirmed_slot_label?: string;
+  confirmed_by?: string;
+  confirmed_at?: string;
+  admission_date: string;
+}
+
+export interface RescheduleRequest {
+  id: string;
+  school_id: string;
+  enrollment_id: string;
+  student_id: string;
+  student_name: string;
+  student_code: string;
+  instructor_id: string;
+  current_schedule_id?: string;
+  current_slot_label: string;
+  requested_slot_id: string;
+  requested_slot_label: string;
+  requested_date: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  reviewed_by?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
   created_at: string;
 }
 
@@ -131,6 +244,13 @@ export interface Enrollment {
   session_allocations?: EnrollmentSessionAllocation[];
   total_sessions: number;
   completed_sessions: number;
+
+  // Preferred & Confirmed Timings
+  preferred_time_slot_id?: string;
+  preferred_time_slot_label?: string;
+  timing_status?: TimingConfirmationStatus;
+  confirmed_slot_id?: string;
+  confirmed_slot_label?: string;
 }
 
 export interface AttendanceRecord {
@@ -348,14 +468,20 @@ export interface ClassSchedule {
   enrollment_id: string;
   student_name: string;
   student_code: string;
+  student_phone?: string;
+  course_name?: string;
   instructor_id: string;
   instructor_name: string;
   vehicle_id?: string;
   vehicle_name?: string;
+  time_slot_id?: string;
+  time_slot_label?: string;
   scheduled_start: string;
   scheduled_end: string;
   topic?: string;
+  session_type?: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'No_Show';
+  attendance_status?: 'Not_Marked' | 'Present' | 'Absent';
   cancellation_reason?: string;
 }
 
@@ -545,10 +671,24 @@ export type SecurityEventType =
   | 'OTP_ABUSE'
   | 'PASSWORD_RESET_REQUESTED'
   | 'PASSWORD_RESET_COMPLETED'
+  | 'STUDENT_ACCOUNT_CREATED'
+  | 'FIRST_PASSWORD_SETUP_COMPLETED'
+  | 'PASSWORD_RESET_BY_STAFF'
+  | 'STUDENT_ACCOUNT_LOCKED'
+  | 'STUDENT_ACCOUNT_UNLOCKED'
+  | 'STUDENT_ACCOUNT_TOGGLED'
   | 'SUSPICIOUS_ACTIVITY'
   | 'ACCOUNT_DISABLED_ATTEMPT'
   | 'LOGOUT'
   | 'SESSION_REVOKED';
+
+export interface StudentAuthResult {
+  success: boolean;
+  student?: Student;
+  mustChangePassword?: boolean;
+  error?: string;
+  lockoutRemainingSeconds?: number;
+}
 
 export interface SecurityLog {
   id: string;
@@ -585,3 +725,42 @@ export interface AuthSessionUser {
   permissions?: StaffMember['permissions'];
   authenticatedAt: string;
 }
+
+export interface StudentSkillAssessment {
+  id: string;
+  student_id: string;
+  instructor_id: string;
+  instructor_name?: string;
+  steering_control: number; // 1-5
+  clutch_control: number; // 1-5
+  gear_changing: number; // 1-5
+  reverse_parking: number; // 1-5
+  highway_driving: number; // 1-5
+  traffic_handling: number; // 1-5
+  road_confidence: number; // 1-5
+  remarks?: string;
+  updated_at: string;
+}
+
+export interface InstructorTimeSlotSummary {
+  slot_id: string;
+  slot_label: string;
+  start_time: string;
+  end_time: string;
+  total_students: number;
+  completed_classes: number;
+  pending_classes: number;
+  slot_status: 'Upcoming' | 'In Progress' | 'Completed' | 'Pending';
+  schedules: ClassSchedule[];
+}
+
+export type InstructorNavModule = 
+  | 'dashboard'
+  | 'students'
+  | 'find-student'
+  | 'today-classes'
+  | 'schedule'
+  | 'history'
+  | 'my-students'
+  | 'notifications'
+  | 'profile';

@@ -4,11 +4,14 @@ import InstructorPortalPage from '../page';
 export function generateStaticParams() {
   return [
     { module: 'dashboard' },
-    { module: 'find-student' },
     { module: 'students' },
-    { module: 'attendance' },
-    { module: 'history' },
+    { module: 'find-student' },
+    { module: 'today-classes' },
     { module: 'schedule' },
+    { module: 'history' },
+    { module: 'attendance' },
+    { module: 'my-students' },
+    { module: 'notifications' },
     { module: 'profile' }
   ];
 }

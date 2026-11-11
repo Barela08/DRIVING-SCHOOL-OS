@@ -76,20 +76,48 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
   onSimulateCompletion,
   isSimulating
 }) => {
+  const [mountedTime, setMountedTime] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setMountedTime(Date.now());
+    const interval = setInterval(() => {
+      setMountedTime(Date.now());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Financial calculations
   const confirmedPayments = payments.filter(p => p.status === 'Confirmed');
   const totalPaid = confirmedPayments.reduce((sum, p) => sum + p.amount, 0);
   const outstandingBalance = Math.max(0, enrollment.agreed_fee - totalPaid);
 
-  // Session metrics
-  const totalClasses = enrollment.total_sessions || 20;
-  const completedClasses = enrollment.completed_sessions || 0;
-  const remainingClasses = Math.max(0, totalClasses - completedClasses);
-  const progressPercent = Math.min(100, Math.round((completedClasses / totalClasses) * 100));
+  // Verified Distinct Class Days (multiple sessions on same date counted as 1 distinct class day)
+  const distinctAttendedDates = Array.from(
+    new Set(attendance.filter(a => a.status === 'Present').map(a => a.attendance_date.split('T')[0]))
+  );
+  const totalCourseDays = enrollment.total_sessions || 30;
+  const completedClassDays = distinctAttendedDates.length;
+  const remainingClassDays = Math.max(0, totalCourseDays - completedClassDays);
+  const courseCompletionPercentage = Math.min(100, Math.round((completedClassDays / totalCourseDays) * 100));
+
+  // Total session allocation count
+  const totalSessions = enrollment.total_sessions || 30;
+  const completedSessions = enrollment.completed_sessions || completedClassDays;
+  const completedClasses = completedClassDays;
+  const totalClasses = totalCourseDays;
+  const progressPercent = courseCompletionPercentage;
+  const remainingClasses = remainingClassDays;
 
   // Upcoming scheduled class
   const upcomingSchedule = schedules.find(s => s.status === 'Scheduled');
   const latestConfirmedPayment = confirmedPayments[confirmedPayments.length - 1];
+
+  // Reschedule Modal State
+  const [isRescheduleOpen, setIsRescheduleOpen] = React.useState(false);
+  const [rescheduleReason, setRescheduleReason] = React.useState('College exam / Work conflict');
+  const [rescheduleDate, setRescheduleDate] = React.useState('');
+  const [rescheduleSlot, setRescheduleSlot] = React.useState('Morning 08:00 AM - 09:00 AM');
+  const [rescheduleSubmitted, setRescheduleSubmitted] = React.useState(false);
 
   // RTO Milestone stages
   const rtoStages = [
@@ -184,13 +212,13 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
           <div className="flex items-center gap-6 self-start md:self-auto">
             <div className="text-right">
               <div className="text-3xl font-black text-blue-400 tabular-nums">
-                {completedClasses} <span className="text-base text-slate-400 font-normal">/ {totalClasses}</span>
+                {completedClassDays} <span className="text-base text-slate-400 font-normal">/ {totalCourseDays}</span>
               </div>
               <span className="text-xs text-slate-300">Sessions Completed</span>
             </div>
 
             <div className="w-16 h-16 rounded-full border-4 border-slate-700/80 bg-slate-900/80 flex flex-col items-center justify-center relative font-black text-white shadow-inner">
-              <span className="text-sm">{progressPercent}%</span>
+              <span className="text-sm">{courseCompletionPercentage}%</span>
               <span className="text-[9px] text-slate-400 font-normal">Done</span>
             </div>
           </div>
@@ -200,12 +228,12 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
         <div className="mt-6 space-y-1.5 relative z-10">
           <div className="flex justify-between text-xs text-slate-300 font-medium">
             <span>Overall Course Curriculum Progress</span>
-            <span className="text-emerald-400 font-bold">{remainingClasses} Sessions Remaining</span>
+            <span className="text-emerald-400 font-bold">{remainingClassDays} Sessions Remaining</span>
           </div>
           <div className="w-full bg-slate-800/80 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700/60">
             <div 
               className="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700 shadow-md"
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `${courseCompletionPercentage}%` }}
             />
           </div>
         </div>
@@ -222,116 +250,116 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
         isSimulating={isSimulating}
       />
 
-      {/* Section 5: The 6 Mandatory KPI Cards */}
+      {/* Section 2: The 6 Required Summary Cards */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            Key Performance Metrics
+            Dashboard Overview
           </h2>
-          <span className="text-xs text-slate-500 dark:text-slate-400">Real-Time Backend Synced</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Verified Database Records</span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {/* Card 1: Total Driving Classes */}
+          {/* Card 1: Total Course Days */}
+          <div 
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
+          >
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-semibold">Total Days</span>
+              <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition" />
+            </div>
+            <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
+              {totalCourseDays}
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+              Required course days
+            </span>
+          </div>
+
+          {/* Card 2: Completed Class Days */}
+          <div 
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
+          >
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-semibold">Completed Days</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition" />
+            </div>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+              {completedClassDays}
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+              Distinct attended days
+            </span>
+          </div>
+
+          {/* Card 3: Remaining Class Days */}
+          <div 
+            onClick={() => onSelectTab('calendar')}
+            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
+          >
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-semibold">Remaining Days</span>
+              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition" />
+            </div>
+            <div className="text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+              {remainingClassDays}
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+              Days to graduate
+            </span>
+          </div>
+
+          {/* Card 4: Course Completion Percentage */}
           <div 
             onClick={() => onSelectTab('course')}
             className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
           >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Total Classes</span>
-              <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition" />
+              <span className="text-[11px] font-semibold">Completion</span>
+              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-              {totalClasses}
+            <div className="text-2xl font-black text-blue-600 dark:text-blue-400 tabular-nums">
+              {courseCompletionPercentage}%
             </div>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Allocated sessions
+              Curriculum mastery
             </span>
           </div>
 
-          {/* Card 2: Completed Classes */}
+          {/* Card 5: Next Scheduled Class */}
           <div 
-            onClick={() => onSelectTab('attendance')}
+            onClick={() => onSelectTab('schedule')}
             className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
           >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Completed</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition" />
+              <span className="text-[11px] font-semibold">Next Class</span>
+              <Car className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition" />
             </div>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-              {completedClasses}
+            <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+              {upcomingSchedule ? new Date(upcomingSchedule.scheduled_start).toLocaleDateString('en-IN', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : 'Awaiting Slot'}
             </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Valid attendance records
+            <span className="text-[10px] text-purple-600 dark:text-purple-400 mt-1 block truncate">
+              {upcomingSchedule ? upcomingSchedule.instructor_name.split(' ')[0] : 'Desk dispatch'}
             </span>
           </div>
 
-          {/* Card 3: Remaining Classes */}
-          <div 
-            onClick={() => onSelectTab('progress')}
-            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Remaining</span>
-              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition" />
-            </div>
-            <div className="text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
-              {remainingClasses}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Lessons to master
-            </span>
-          </div>
-
-          {/* Card 4: Fees Paid */}
+          {/* Card 6: Outstanding Fee Balance */}
           <div 
             onClick={() => onSelectTab('fees')}
             className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
           >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Fees Paid</span>
-              <IndianRupee className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition" />
+              <span className="text-[11px] font-semibold">Balance Due</span>
+              <IndianRupee className={`w-4 h-4 ${outstandingBalance > 0 ? 'text-rose-500' : 'text-emerald-500'}`} />
             </div>
-            <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-              ₹{totalPaid.toLocaleString('en-IN')}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Confirmed payments
-            </span>
-          </div>
-
-          {/* Card 5: Pending Fees */}
-          <div 
-            onClick={() => onSelectTab('fees')}
-            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Pending Fees</span>
-              <AlertCircle className={`w-4 h-4 ${outstandingBalance > 0 ? 'text-rose-500' : 'text-slate-400'}`} />
-            </div>
-            <div className={`text-xl sm:text-2xl font-black tabular-nums ${outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
+            <div className={`text-xl sm:text-2xl font-black tabular-nums ${outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
               ₹{outstandingBalance.toLocaleString('en-IN')}
             </div>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
-              {outstandingBalance > 0 ? 'Outstanding balance' : 'Fully cleared'}
-            </span>
-          </div>
-
-          {/* Card 6: Licence Status */}
-          <div 
-            onClick={() => onSelectTab('licence')}
-            className="p-4 rounded-2xl bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] shadow-sm hover:shadow-md transition cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-              <span className="text-[11px] font-semibold">Licence Status</span>
-              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition" />
-            </div>
-            <div className="text-xs font-black text-slate-900 dark:text-white truncate">
-              {licence?.ll_status || 'In Process'}
-            </div>
-            <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400 mt-1 block truncate">
-              {licence?.rto_name || 'RTO MH-12'}
+              {outstandingBalance > 0 ? 'Outstanding fee' : 'Fully settled'}
             </span>
           </div>
         </div>
@@ -341,84 +369,149 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* Left Column: Next Class & Session Progress Preview (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Next Scheduled Driving Class Card */}
-          {upcomingSchedule ? (
-            <div className="bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] rounded-3xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <Calendar className="w-4 h-4" />
+          {/* Next Scheduled Driving Class Card with Part 11 Countdown */}
+          {upcomingSchedule ? (() => {
+            const startDate = new Date(upcomingSchedule.scheduled_start);
+            const targetMs = startDate.getTime();
+            let countdownText = 'Upcoming Next';
+            if (mountedTime !== null) {
+              const diffMs = targetMs - mountedTime;
+              if (diffMs > 0) {
+                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                if (days > 0) {
+                  countdownText = `${days} Day${days > 1 ? 's' : ''}, ${hours} Hour${hours > 1 ? 's' : ''} Remaining`;
+                } else if (hours > 0) {
+                  countdownText = `${hours} Hour${hours > 1 ? 's' : ''}, ${mins} Mins Remaining`;
+                } else {
+                  countdownText = `${mins} Mins Remaining`;
+                }
+              } else if (diffMs > -3600000) {
+                countdownText = 'Class In Progress Now';
+              } else {
+                countdownText = 'Completed';
+              }
+            }
+
+            const formattedNextDate = startDate.toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long'
+            });
+            const formattedNextTime = startDate.toLocaleTimeString('en-IN', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            });
+
+            return (
+              <div className="bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      <Calendar className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Next Driving Lesson</h3>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Arrive 10 minutes prior to session start</span>
+                    </div>
+                  </div>
+
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    Confirmed
                   </span>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Next Driving Lesson</h3>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Arrive 10 minutes prior to session start</span>
-                  </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  Confirmed
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 block uppercase tracking-wider">
-                      Lesson Topic
+                {/* Countdown Spotlight Banner (Part 11) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-600/15 via-indigo-600/15 to-purple-600/10 border border-blue-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider">
+                      Upcoming Class Countdown
                     </span>
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
-                      {upcomingSchedule.topic}
-                    </h4>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono">
-                    Session In Pipeline
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
-                  <div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Date & Time:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {new Date(upcomingSchedule.scheduled_start).toLocaleString('en-IN', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                    <div className="font-mono text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                      Countdown: {countdownText}
+                    </div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                      Next Class: <strong>{formattedNextDate}</strong> • Time: <strong>{formattedNextTime}</strong>
                     </span>
                   </div>
 
-                  <div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Instructor & Vehicle:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
-                      {upcomingSchedule.instructor_name} • {upcomingSchedule.vehicle_name || 'Dual Control Car'}
+                  <div className="p-2.5 rounded-xl bg-white/60 dark:bg-[#0B1728]/80 border border-blue-500/20 text-right shrink-0">
+                    <span className="text-[10px] text-slate-400 block font-medium">Remaining Quota</span>
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
+                      {remainingClassDays} Days / {Math.max(0, totalSessions - completedSessions)} Sessions
                     </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between pt-1">
-                {instructor?.phone && (
-                  <a
-                    href={`tel:${instructor.phone}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    <Phone className="w-3.5 h-3.5" /> Call Instructor ({instructor.phone})
-                  </a>
-                )}
-                <button
-                  onClick={() => onSelectTab('schedule')}
-                  className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white flex items-center gap-1"
-                >
-                  View Full Schedule <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0B1728] border border-[#E5EAF1] dark:border-[#1E293B] space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 block uppercase tracking-wider">
+                        Lesson Topic
+                      </span>
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                        {upcomingSchedule.topic}
+                      </h4>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono">
+                      Session In Pipeline
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
+                    <div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Date & Time:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {formattedNextDate}, {formattedNextTime}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Instructor & Vehicle:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
+                        {upcomingSchedule.instructor_name} • {upcomingSchedule.vehicle_name || 'Dual Control Car'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  {instructor?.phone && (
+                    <a
+                      href={`tel:${instructor.phone}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      <Phone className="w-3.5 h-3.5" /> Call Instructor ({instructor.phone})
+                    </a>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsRescheduleOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-bold transition"
+                    >
+                      Request Reschedule
+                    </button>
+                    <button
+                      onClick={() => onSelectTab('schedule')}
+                      className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white flex items-center gap-1"
+                    >
+                      Full Schedule <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Strict Security Notice: No Self-Attendance */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0B1728] border border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>Attendance marking is certified directly by your instructor on location. Students cannot mark their own attendance.</span>
+                </div>
               </div>
-            </div>
-          ) : (
+            );
+          })() : (
             <div className="bg-white dark:bg-[#111E32] border border-[#E5EAF1] dark:border-[#1E293B] rounded-3xl p-6 shadow-sm text-center py-8 space-y-3">
               <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">No Pending Class Scheduled Today</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">No Upcoming Class Scheduled</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                 Academy dispatchers assign lesson slots based on instructor availability and syllabus sequence.
               </p>
@@ -641,6 +734,117 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
           vehicle={vehicle}
         />
       </div>
+
+      {/* Reschedule Request Modal */}
+      {isRescheduleOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-[#111E32] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative">
+            <button
+              onClick={() => {
+                setIsRescheduleOpen(false);
+                setRescheduleSubmitted(false);
+              }}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 dark:bg-slate-800 transition"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-1">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                Request Slot Reschedule
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Submit your preferred date and time. Desk dispatchers will adjust your schedule without reducing session quotas.
+              </p>
+            </div>
+
+            {rescheduleSubmitted ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">Request Dispatched!</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Your reschedule preference has been submitted to the front desk. You will receive an SMS and portal update once confirmed.
+                </p>
+                <button
+                  onClick={() => {
+                    setIsRescheduleOpen(false);
+                    setRescheduleSubmitted(false);
+                  }}
+                  className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setRescheduleSubmitted(true);
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                    Preferred New Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#0B1728] border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                    Preferred Time Slot
+                  </label>
+                  <select
+                    value={rescheduleSlot}
+                    onChange={(e) => setRescheduleSlot(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#0B1728] border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="Morning 08:00 AM - 09:00 AM">Morning 08:00 AM - 09:00 AM</option>
+                    <option value="Morning 09:00 AM - 10:00 AM">Morning 09:00 AM - 10:00 AM</option>
+                    <option value="Afternoon 04:00 PM - 05:00 PM">Afternoon 04:00 PM - 05:00 PM</option>
+                    <option value="Evening 05:00 PM - 06:00 PM">Evening 05:00 PM - 06:00 PM</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                    Reason for Reschedule
+                  </label>
+                  <select
+                    value={rescheduleReason}
+                    onChange={(e) => setRescheduleReason(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#0B1728] border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="College exam / Academic conflict">College exam / Academic conflict</option>
+                    <option value="Office work meeting / Travel">Office work meeting / Travel</option>
+                    <option value="Health / Personal emergency">Health / Personal emergency</option>
+                    <option value="Weather / Heavy rain">Weather / Heavy rain</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-lg shadow-blue-600/25"
+                  >
+                    Send Reschedule Request
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
