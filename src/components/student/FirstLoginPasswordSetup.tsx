@@ -199,23 +199,23 @@ export const FirstLoginPasswordSetup: React.FC<FirstLoginPasswordSetupProps> = (
                 Password Security Checklist:
               </span>
               <ul className="space-y-1.5 text-[11px]">
-                <li className={`flex items-center gap-2 ${validation.requirements.minLength ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}`}>
+                <li className={`flex items-center gap-2 ${validation.requirements.minLength ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-300'}`}>
                   {validation.requirements.minLength ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block" />}
                   <span>Minimum 8 characters</span>
                 </li>
-                <li className={`flex items-center gap-2 ${validation.requirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}`}>
+                <li className={`flex items-center gap-2 ${validation.requirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-300'}`}>
                   {validation.requirements.hasUppercase ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block" />}
                   <span>At least one uppercase letter (A-Z)</span>
                 </li>
-                <li className={`flex items-center gap-2 ${validation.requirements.hasLowercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}`}>
+                <li className={`flex items-center gap-2 ${validation.requirements.hasLowercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-300'}`}>
                   {validation.requirements.hasLowercase ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block" />}
                   <span>At least one lowercase letter (a-z)</span>
                 </li>
-                <li className={`flex items-center gap-2 ${validation.requirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}`}>
+                <li className={`flex items-center gap-2 ${validation.requirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-300'}`}>
                   {validation.requirements.hasNumber ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block" />}
                   <span>At least one number (0-9)</span>
                 </li>
-                <li className={`flex items-center gap-2 ${validation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}`}>
+                <li className={`flex items-center gap-2 ${validation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-300'}`}>
                   {validation.requirements.hasSpecialChar ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block" />}
                   <span>At least one special character (!@#$%^&*...)</span>
                 </li>

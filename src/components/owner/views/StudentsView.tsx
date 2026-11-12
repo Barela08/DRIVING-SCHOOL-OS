@@ -308,6 +308,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onOpenStudent, onQui
           </div>
         </div>
       </div>
+
+      {resetModalStudent && (
+        <ResetPasswordModal
+          student={resetModalStudent}
+          onClose={() => setResetModalStudent(null)}
+        />
+      )}
     </div>
   );
 };

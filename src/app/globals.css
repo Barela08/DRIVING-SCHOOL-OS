@@ -40,6 +40,44 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Keep native controls readable across the app's dark surfaces and light cards. */
+.dark input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.dark textarea,
+.dark select {
+  color-scheme: dark;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Slate-500/600 and gray-500/600 are too dim on the app's navy surfaces. */
+.dark .text-slate-500,
+.dark .text-gray-500,
+.dark .text-neutral-500 {
+  color: #a8b7ca;
+}
+
+.dark .text-slate-600,
+.dark .text-gray-600,
+.dark .text-neutral-600 {
+  color: #b9c7d8;
+}
+
+.dark .text-slate-400,
+.dark .text-gray-400,
+.dark .text-neutral-400 {
+  color: #b8c5d6;
+}
+
+.dark .placeholder-slate-500::placeholder,
+.dark .placeholder-gray-500::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
 /* Tabular figures for financial and analytical numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;

@@ -105,8 +105,8 @@ export const OwnerSidebar: React.FC<OwnerSidebarProps> = ({
       {/* Top Brand Header */}
       <div className="p-4 border-b border-[#1E293B] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0">
-            <Car className="w-5 h-5 stroke-[2.5]" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0 overflow-hidden">
+            {school.logo_url ? <img src={school.logo_url} alt="School logo" className="w-full h-full object-contain bg-white" /> : <Car className="w-5 h-5 stroke-[2.5]" />}
           </div>
           {!collapsed && (
             <div className="min-w-0">

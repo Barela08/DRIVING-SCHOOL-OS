@@ -293,7 +293,7 @@ export const StudentCourseCalendar: React.FC<StudentCourseCalendarProps> = ({
               onClick={() => setViewFilter('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 viewFilter === 'all'
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                  ? 'bg-slate-900 dark:bg-blue-600 text-white dark:text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >

@@ -412,6 +412,14 @@ export const DrivingSchoolProvider: React.FC<{ children: React.ReactNode }> = ({
   
   // State Entities
   const [school, setSchool] = useState<School>(mockSchool);
+  useEffect(() => {
+    try {
+      const savedSchool = localStorage.getItem('driving-school-profile');
+      if (savedSchool) setSchool({ ...mockSchool, ...JSON.parse(savedSchool) });
+    } catch {
+      localStorage.removeItem('driving-school-profile');
+    }
+  }, []);
   const [branches, setBranches] = useState<Branch[]>(mockBranches);
   const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
   const [courses, setCourses] = useState<Course[]>(mockCourses);
@@ -2235,7 +2243,15 @@ export const DrivingSchoolProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Update School
   const updateSchool = async (data: Partial<School>) => {
-    setSchool(prev => ({ ...prev, ...data }));
+    setSchool(prev => {
+      const updated = { ...prev, ...data };
+      try {
+        localStorage.setItem('driving-school-profile', JSON.stringify(updated));
+      } catch {
+        addToast('बदलाव browser में save नहीं हुए। Logo छोटा करके फिर कोशिश करें।', 'error');
+      }
+      return updated;
+    });
     const audit: AuditLog = {
       id: `aud-${Date.now()}`,
       school_id: school.id,

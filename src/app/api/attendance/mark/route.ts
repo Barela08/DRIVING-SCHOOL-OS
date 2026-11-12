@@ -34,14 +34,38 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { enrollmentId, sessionAllocationId, scheduleId, remarks } = body;
+    let { enrollmentId, sessionAllocationId, allocationId, scheduleId, remarks } = body;
+    const targetAllocationId = sessionAllocationId || allocationId;
 
-    if (!enrollmentId || !sessionAllocationId) {
+    if (!targetAllocationId) {
       return NextResponse.json(
-        { success: false, error: 'Missing required parameters: enrollmentId and sessionAllocationId are mandatory.' },
+        { success: false, error: 'Missing required parameter: sessionAllocationId is mandatory.' },
         { status: 400 }
       );
     }
+
+    if (!enrollmentId) {
+      const foundSched = scheduleId ? mockSchedules.find(s => s.id === scheduleId) : null;
+      if (foundSched?.enrollment_id) {
+        enrollmentId = foundSched.enrollment_id;
+      } else {
+        const foundEnr = mockEnrollments.find(e => 
+          e.session_allocations?.some(sa => sa.id === targetAllocationId)
+        );
+        if (foundEnr) {
+          enrollmentId = foundEnr.id;
+        }
+      }
+    }
+
+    if (!enrollmentId) {
+      return NextResponse.json(
+        { success: false, error: 'Could not determine enrollment for this session allocation.' },
+        { status: 400 }
+      );
+    }
+
+    sessionAllocationId = targetAllocationId;
 
     // 2. Authoritative Server Timestamp (UTC + Asia/Kolkata formatting)
     const serverNow = new Date();

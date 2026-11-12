@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useDrivingSchool } from '@/context/DrivingSchoolContext';
 import { 
   Settings, 
@@ -44,6 +45,42 @@ export const SettingsView: React.FC = () => {
   const [googleReviewUrl, setGoogleReviewUrl] = useState(school.google_review_url || '');
   const [autoIssueCerts, setAutoIssueCerts] = useState(school.auto_issue_certificates ?? true);
   const [savingReviewSettings, setSavingReviewSettings] = useState(false);
+  const [savingBranding, setSavingBranding] = useState(false);
+  const [brandingName, setBrandingName] = useState(school.name);
+  const [brandingLogo, setBrandingLogo] = useState(school.logo_url || '');
+
+  const handleLogoUpload = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      addToast('कृपया PNG, JPG या SVG image चुनें।', 'error');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      addToast('Logo file 2 MB से छोटी होनी चाहिए।', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setBrandingLogo(String(reader.result || ''));
+    reader.onerror = () => addToast('Logo पढ़ा नहीं जा सका।', 'error');
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveBranding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!brandingName.trim()) {
+      addToast('School name खाली नहीं हो सकता।', 'error');
+      return;
+    }
+    setSavingBranding(true);
+    try {
+      await updateSchool({ name: brandingName.trim(), logo_url: brandingLogo });
+      addToast('School name और logo save हो गए।', 'success');
+    } catch {
+      addToast('Branding save नहीं हो सकी।', 'error');
+    } finally {
+      setSavingBranding(false);
+    }
+  };
 
   // School profile form state
   const [profileForm, setProfileForm] = useState({
@@ -659,17 +696,24 @@ export const SettingsView: React.FC = () => {
       {activeSubTab === 'branding' && (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 text-xs max-w-4xl shadow-xl">
           <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3">Logo & Print Customization</h3>
-          <p className="text-slate-400">Customize the look of printed fee receipts, Sarathi test cards, and portal branding.</p>
-          
-          <div className="flex items-center gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-black">
-              A
-            </div>
+          <p className="text-slate-400">School का नाम और logo यहाँ बदलें। बदलाव owner panel और print receipts में दिखेंगे।</p>
+          <form onSubmit={handleSaveBranding} className="space-y-5">
             <div>
-              <span className="font-bold text-white block">Apex Motor Driving School Logo</span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">High-res SVG / PNG (Recommended: 512x512)</span>
+              <label htmlFor="branding-school-name" className="text-slate-300 font-semibold block mb-1.5">School / Academy name</label>
+              <input id="branding-school-name" value={brandingName} onChange={e => setBrandingName(e.target.value)} required maxLength={100} className="w-full max-w-xl bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-blue-500" />
             </div>
-          </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+              <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                {brandingLogo ? <img src={brandingLogo} alt="School logo preview" className="w-full h-full object-contain" /> : <Building2 className="w-8 h-8 text-blue-400" />}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="branding-logo-file" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-3 py-2 text-white font-bold cursor-pointer">Choose logo<input id="branding-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="sr-only" onChange={e => handleLogoUpload(e.target.files?.[0])} /></label>
+                <p className="text-[11px] text-slate-400">PNG, JPG, WebP या SVG; अधिकतम 2 MB।</p>
+                {brandingLogo && <button type="button" onClick={() => setBrandingLogo('')} className="text-rose-300 hover:text-rose-200 font-semibold">Remove logo</button>}
+              </div>
+            </div>
+            <button type="submit" disabled={savingBranding} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 px-4 py-2.5 text-white font-bold"><Save className="w-4 h-4" />{savingBranding ? 'Saving...' : 'Save name & logo'}</button>
+          </form>
         </div>
       )}
 

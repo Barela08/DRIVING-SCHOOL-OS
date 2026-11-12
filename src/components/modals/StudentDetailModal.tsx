@@ -25,8 +25,14 @@ import {
   Clock,
   ShieldCheck,
   ExternalLink,
-  Edit3
+  Edit3,
+  KeyRound,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  RotateCcw
 } from 'lucide-react';
+import { ResetPasswordModal } from '@/components/modals/ResetPasswordModal';
 import { LLWorkflowModal } from '@/components/licence/LLWorkflowModal';
 import { getStudentLLProgress } from '@/lib/llTrackingEngine';
 
@@ -53,6 +59,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     llReminderSettings,
     studentDocuments,
     updateLicenceStatus,
+    toggleStudentAccount,
     addToast
   } = useDrivingSchool();
 
@@ -61,6 +68,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   >('overview');
 
   const [isLLWorkflowOpen, setIsLLWorkflowOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   if (!student) return null;
 
@@ -274,6 +282,92 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                       <span className="font-mono font-semibold text-emerald-400">{studentLicence?.licence_number || 'Awaiting Test'}</span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Account & Security Credentials */}
+              <div className="bg-slate-800/40 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                      <KeyRound className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Student Account & Security</h3>
+                      <p className="text-[11px] text-slate-400">Authentication status, first login verification, and access controls</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsResetModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold transition"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reset to Temp Password
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const res = await toggleStudentAccount(student.id);
+                        addToast(res.message, 'info');
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                        student.account_enabled === false
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30'
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {student.account_enabled === false ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      {student.account_enabled === false ? 'Account Disabled (Click to Enable)' : 'Account Enabled'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block mb-1">Student ID (Username)</span>
+                    <span className="font-mono font-bold text-blue-400 text-sm">{student.student_code}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block mb-1">Account Activation Status</span>
+                    {student.account_enabled === false || student.account_status === 'DISABLED' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        <ShieldAlert className="w-3 h-3 text-rose-400" /> Disabled
+                      </span>
+                    ) : student.account_status === 'FIRST_LOGIN_PASSWORD_CHANGE_REQUIRED' || !student.first_login_completed ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        <KeyRound className="w-3 h-3 text-amber-400" /> 1st Login Required
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" /> Active & Secured
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block mb-1">First-Time Setup Status</span>
+                    <span className="font-semibold text-white">
+                      {student.first_login_completed ? 'Completed' : 'Pending First Login'}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span className="text-slate-400 block mb-1">Password Last Changed</span>
+                    <span className="font-semibold text-white">
+                      {student.password_changed_at 
+                        ? new Date(student.password_changed_at).toLocaleDateString() 
+                        : 'Initial temporary credential'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 text-[11px] text-slate-400 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <span>
+                    Staff and administrators cannot view student passwords. Passwords are securely hashed with PBKDF2-SHA256. Resetting credentials creates a temporary password matching the Student ID, and forces the student to create a new password upon their next login.
+                  </span>
                 </div>
               </div>
             </div>
@@ -810,6 +904,14 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         student={student}
         licenceRecord={studentLicence}
       />
+
+      {/* Reset Password Modal */}
+      {isResetModalOpen && (
+        <ResetPasswordModal
+          student={student}
+          onClose={() => setIsResetModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

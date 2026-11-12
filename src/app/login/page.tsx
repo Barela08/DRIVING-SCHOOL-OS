@@ -158,8 +158,8 @@ function LoginForm() {
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#2563EB] to-[#3B82F6] flex items-center justify-center text-white shadow-xl shadow-blue-500/25 group-hover:scale-105 transition-transform">
-              <Car className="w-7 h-7 stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#2563EB] to-[#3B82F6] flex items-center justify-center text-white shadow-xl shadow-blue-500/25 group-hover:scale-105 transition-transform overflow-hidden">
+              {school.logo_url ? <img src={school.logo_url} alt={`${school.name} logo`} className="w-full h-full object-contain bg-white" /> : <Car className="w-7 h-7 stroke-[2.5]" />}
             </div>
             <div className="text-left">
               <span className="font-black text-xl tracking-tight text-white block uppercase">

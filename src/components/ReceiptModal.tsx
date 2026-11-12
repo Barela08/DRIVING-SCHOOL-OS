@@ -40,6 +40,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ payment, school, onC
         <div className="receipt-box border border-slate-300 rounded-xl p-6 bg-slate-50/50">
           {/* Header */}
           <div className="text-center border-b border-slate-200 pb-4 mb-5">
+            {school.logo_url && <img src={school.logo_url} alt={`${school.name} logo`} className="w-16 h-16 object-contain mx-auto mb-2" />}
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2">
               <CheckCircle className="w-3.5 h-3.5" /> OFFICIAL PAYMENT RECEIPT
             </div>

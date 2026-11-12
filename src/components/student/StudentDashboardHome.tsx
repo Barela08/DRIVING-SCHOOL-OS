@@ -773,7 +773,7 @@ export const StudentDashboardHome: React.FC<StudentDashboardHomeProps> = ({
                     setIsRescheduleOpen(false);
                     setRescheduleSubmitted(false);
                   }}
-                  className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs"
+                  className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 dark:bg-blue-600 text-white dark:text-white font-bold text-xs"
                 >
                   Done
                 </button>
